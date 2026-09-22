@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时间序列预测与供应链智能分析平台 @林梦龙</title>
+    <!-- 版权声明与作者信息 -->
+    <meta name="author" content="林梦龙">
+    <meta name="copyright" content="Copyright © 2024 林梦龙. 保留所有权利。未经授权，禁止商用及二次分发。">
+    <meta name="description" content="时间序列预测与供应链智能分析平台，作者：林梦龙">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --bg-dark: #0f172a;
+            --panel-bg: #1e293b;
+            --border-color: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-green: #10b981;
+            --accent-gold: #f59e0b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 20px;
+        }
+
+        header {
+            grid-column: 1 / -1;
+            background: var(--panel-bg);
+            padding: 15px 25px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            color: #60a5fa;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .sidebar {
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        input, select, button {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-btn {
+            background: #2563eb;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .file-upload-btn:hover {
+            background: #1d4ed8;
+        }
+
+        button.action-btn {
+            background: var(--accent-green);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            padding: 10px;
+            margin-top: 5px;
+        }
+
+        button.action-btn:hover {
+            opacity: 0.9;
+        }
+
+        /* Metrics Display */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .metric-card {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .metric-title {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin: 5px 0;
+            color: #38bdf8;
+        }
+
+        .best-badge {
+            font-size: 0.75rem;
+            background: #1e3a8a;
+            color: #93c5fd;
+            padding: 3px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 4px;
+            border: 1px solid #3b82f6;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 450px;
+            width: 100%;
+        }
+
+        /* Table */
+        .table-container {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: #0f172a;
+            color: var(--text-muted);
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background: #334155;
+        }
+
+        .params-block {
+            border-left: 3px solid var(--primary-light);
+            padding-left: 10px;
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 10px;
+            font-size: 0.85rem;
+        }
+
+        /* ====== 广告横幅样式 ====== */
+        .ad-banner {
+            background: linear-gradient(90deg, #2e1065, #4c1d95, #2e1065);
+            border: 1px solid #fbbf24;
+            border-radius: 8px;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .ad-text {
+            font-size: 0.95rem;
+            color: #f8fafc;
+            font-weight: 500;
+        }
+
+        .ad-text strong {
+            font-weight: bold;
+        }
+
+        .ad-links {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        .ad-book-link {
+            color: #60a5fa;
+            background: rgba(30, 58, 138, 0.5);
+            border: 1px solid #3b82f6;
+            padding: 4px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .ad-book-link:hover {
+            background: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+        }
+
+        .ad-text-gray {
+            color: #cbd5e1;
+        }
+
+        .ad-text-gold {
+            color: #fbbf24;
+            font-weight: bold;
+        }
+
+        /* 页脚版权声明 */
+        .footer-copyright {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 20px;
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #64748b;
+            border-top: 1px dashed var(--border-color);
+        }
+        .footer-copyright span {
+            color: #f59e0b;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>时间序列预测与需求分析工作台</h1>
+            <div class="subtitle">时间序列预测平台 By 林梦龙</div>
+        </div>
+        <div>
+            <button onclick="loadSampleData('regular')" style="margin-right:8px;">加载连续需求示例</button>
+            <button onclick="loadSampleData('intermittent')">加载间歇需求示例</button>
+        </div>
+    </header>
+
+    <!-- 侧边栏：参数配置 -->
+    <div class="sidebar">
+        <div class="form-group">
+            <label>1. 数据导入</label>
+            <label for="csv-file" class="file-upload-btn">上传 CSV / Excel 文件</label>
+            <input type="file" id="csv-file" accept=".csv, .xlsx, .xls">
+            <span id="file-name" class="subtitle">未选择文件</span>
+        </div>
+
+        <div class="form-group">
+            <label for="time-col">时间列</label>
+            <select id="time-col"></select>
+        </div>
+
+        <div class="form-group">
+            <label for="val-col">数值/需求列</label>
+            <select id="val-col"></select>
+        </div>
+
+        <hr style="border-color: var(--border-color); width: 100%;">
+
+        <div class="form-group">
+            <label for="model-select">2. 预测模型选择</label>
+            <select id="model-select" onchange="toggleParamPanels()">
+                <optgroup label="基础/常规时间序列">
+                    <option value="naive">朴素预测 (Naive)</option>
+                    <option value="sma">简单移动平均 (SMA)</option>
+                    <option value="wma">加权移动平均 (WMA)</option>
+                    <option value="ses">单指数平滑 (SES)</option>
+                    <option value="des">双指数平滑 (Holt's)</option>
+                    <option value="tes">三指数平滑 (Holt-Winters)</option>
+                </optgroup>
+                <optgroup label="高阶/平稳时序模型">
+                    <option value="arma">ARMA 模型</option>
+                    <option value="arima">ARIMA 模型</option>
+                    <option value="sarima">SARIMA 季节性模型</option>
+                    <option value="sarimax">SARIMAX 扩展模型</option>
+                </optgroup>
+                <optgroup label="间歇性需求模型 (Croston)">
+                    <option value="croston_orig">原始克罗斯顿法 (Croston)</option>
+                    <option value="croston_sba">克罗斯顿 SBA 法 (Syntetos-Boylan)</option>
+                    <option value="croston_sbj">克罗斯顿 SBJ 法</option>
+                    <option value="croston_tsb">克罗斯顿 TSB 法 (Teunter-Syntetos-Babai)</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <!-- 动态模型参数区 -->
+        <div id="params-container" class="params-block">
+            <div class="form-group param-item" id="p-window">
+                <label>窗口大小 (N): <span id="v-window">3</span></label>
+                <input type="range" id="param-window" min="1" max="24" value="3" oninput="document.getElementById('v-window').innerText=this.value">
+            </div>
+
+            <div class="form-group param-item" id="p-alpha">
+                <label>平滑常数 Alpha (α): <span id="v-alpha">0.2</span></label>
+                <input type="range" id="param-alpha" min="0.01" max="0.99" step="0.01" value="0.2" oninput="document.getElementById('v-alpha').innerText=this.value">
+            </div>
+
+            <div class="form-group param-item" id="p-beta">
+                <label>趋势常数 Beta (β): <span id="v-beta">0.1</span></label>
+                <input type="range" id="param-beta" min="0.01" max="0.99" step="0.01" value="0.1" oninput="document.getElementById('v-beta').innerText=this.value">
+            </div>
+
+            <div class="form-group param-item" id="p-gamma">
+                <label>季节常数 Gamma (γ): <span id="v-gamma">0.1</span></label>
+                <input type="range" id="param-gamma" min="0.01" max="0.99" step="0.01" value="0.1" oninput="document.getElementById('v-gamma').innerText=this.value">
+            </div>
+
+            <div class="form-group param-item" id="p-period">
+                <label>季节周期 (s):</label>
+                <input type="number" id="param-period" value="12" min="2">
+            </div>
+
+            <div class="form-group param-item" id="p-orders">
+                <label>p (AR 阶数):</label>
+                <input type="number" id="param-p" value="1" min="0" max="5">
+                <label>d (差分阶数):</label>
+                <input type="number" id="param-d" value="1" min="0" max="2">
+                <label>q (MA 阶数):</label>
+                <input type="number" id="param-q" value="1" min="0" max="5">
+            </div>
+
+            <div class="form-group param-item" id="p-sorders">
+                <label>P (季节性 AR):</label>
+                <input type="number" id="param-sp" value="1" min="0" max="2">
+                <label>D (季节性差分):</label>
+                <input type="number" id="param-sd" value="1" min="0" max="1">
+                <label>Q (季节性 MA):</label>
+                <input type="number" id="param-sq" value="1" min="0" max="2">
+            </div>
+        </div>
+
+        <hr style="border-color: var(--border-color); width: 100%;">
+
+        <div class="form-group">
+            <label>3. 预测与评估设置</label>
+            <label>训练期数 (Train Size): <span id="v-train-size">全部</span></label>
+            <input type="range" id="train-size" min="3" max="24" value="24" oninput="updateTrainSizeLabel(this.value)">
+        </div>
+
+        <div class="form-group">
+            <label>预测期数 (Forecast Horizon): <span id="v-horizon">6</span></label>
+            <input type="range" id="forecast-horizon" min="1" max="24" value="6" oninput="document.getElementById('v-horizon').innerText=this.value">
+        </div>
+
+        <div class="form-group">
+            <label>置信区间级别 (Confidence Interval):</label>
+            <select id="ci-level">
+                <option value="0.80">80%</option>
+                <option value="0.90">90%</option>
+                <option value="0.95" selected>95% (默认)</option>
+                <option value="0.99">99%</option>
+            </select>
+        </div>
+
+        <button class="action-btn" onclick="runAnalysis()">运行预测分析</button>
+    </div>
+
+    <!-- 主展示区 -->
+    <div class="main-content">
+        
+        <!-- 广告横幅 -->
+        <div class="ad-banner">
+            <div class="ad-text">
+                所有方法，请通过公众号 <strong>林梦龙</strong> ，购买书籍
+            </div>
+            <div class="ad-links">
+                <a href="javascript:void(0)" class="ad-book-link">《供应链库存与计划管理》</a>
+                <span class="ad-text-gray">以及订阅</span>
+                <a href="javascript:void(0)" class="ad-book-link">《AI穿透供应链：从需求预测到资金回笼的智能博弈》</a>
+                <span class="ad-text-gold">均可了解</span>
+            </div>
+        </div>
+
+        <!-- 误差指标评估卡片 -->
+        <div class="card">
+            <h3 style="margin-top:0; margin-bottom:15px; font-size:1rem; color:var(--text-muted);">模型验证集误差评估 & 最优模型诊断</h3>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-title">MAE (平均绝对误差)</div>
+                    <div class="metric-value" id="m-mae">-</div>
+                    <div class="best-badge" id="best-mae">最佳: -</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">RMSE (均方根误差)</div>
+                    <div class="metric-value" id="m-rmse">-</div>
+                    <div class="best-badge" id="best-rmse">最佳: -</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">MAPE (平均绝对百分比误差)</div>
+                    <div class="metric-value" id="m-mape">-</div>
+                    <div class="best-badge" id="best-mape">最佳: -</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">MSE (均方误差)</div>
+                    <div class="metric-value" id="m-mse">-</div>
+                    <div class="best-badge" id="best-mse">最佳: -</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">sMAPE (对称百分比误差)</div>
+                    <div class="metric-value" id="m-smape">-</div>
+                    <div class="best-badge" id="best-smape">最佳: -</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">WMAPE (加权百分比误差)</div>
+                    <div class="metric-value" id="m-wmape">-</div>
+                    <div class="best-badge" id="best-wmape">最佳: -</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图表 -->
+        <div class="card">
+            <div class="chart-container">
+                <canvas id="forecastChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 详细预测明细表 -->
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 style="margin:0; font-size:1rem; color:var(--text-muted);">明细数据与拟合/预测结果 (含置信区间)</h3>
+                <button onclick="exportCSV()" style="font-size:0.8rem;">导出预测 CSV</button>
+            </div>
+            <div class="table-container">
+                <table id="result-table">
+                    <thead>
+                        <tr>
+                            <th>时间 (Time)</th>
+                            <th>实际值 (Actual)</th>
+                            <th>模型拟合/预测值 (Forecast)</th>
+                            <th>残差 (Error)</th>
+                            <th>置信下限 (Lower Limit)</th>
+                            <th>置信上限 (Upper Limit)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 动态渲染 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚版权声明 -->
+    <div class="footer-copyright">
+        版权所有 © 2024 <span>林梦龙</span>. 保留所有权利。未经授权，禁止商用及二次分发。侵权必究。
+    </div>
+</div>
+
+<script>
+    /**
+     * =====================================================================
+     * 时间序列预测与供应链智能分析平台
+     * 作者：林梦龙
+     * 版权：Copyright © 2024 林梦龙. 保留所有权利。
+     * 声明：本代码受版权保护，未经授权禁止商用及二次分发。
+     * =====================================================================
+     */
+
+    // ====== 隐形水印区 (请勿删除) ======
+    // 此变量为隐形水印，用于追踪代码来源，非法盗用将承担法律责任。
+    const _INVISIBLE_WATERMARK_LINMENGLONG_2024 = "林梦龙_" + "\u200b\u200b\u200b\u200b\u200b\u200b" + "_AUTHOR_SIGNATURE";
+    // ===================================
+
+    // 全局状态与数据保存
+    let rawData = [];
+    let parsedTimes = [];
+    let parsedValues = [];
+    let forecastChart = null;
+    let globalExecutionResults = {}; // 保存所有模型计算的评估结果
+
+    // 默认内置示例数据（连续型 & 间歇型）
+    const sampleRegular = [
+        {"Date": "2024-01", "Demand": 112}, {"Date": "2024-02", "Demand": 118}, {"Date": "2024-03", "Demand": 132},
+        {"Date": "2024-04", "Demand": 129}, {"Date": "2024-05", "Demand": 121}, {"Date": "2024-06", "Demand": 135},
+        {"Date": "2024-07", "Demand": 148}, {"Date": "2024-08", "Demand": 148}, {"Date": "2024-09", "Demand": 136},
+        {"Date": "2024-10", "Demand": 119}, {"Date": "2024-11", "Demand": 104}, {"Date": "2024-12", "Demand": 118},
+        {"Date": "2025-01", "Demand": 140}, {"Date": "2025-02", "Demand": 150}, {"Date": "2025-03", "Demand": 165},
+        {"Date": "2025-04", "Demand": 163}, {"Date": "2025-05", "Demand": 156}, {"Date": "2025-06", "Demand": 170},
+        {"Date": "2025-07", "Demand": 235}, {"Date": "2025-08", "Demand": 251}, {"Date": "2025-09", "Demand": 267},
+        {"Date": "2025-10", "Demand": 282}, {"Date": "2025-11", "Demand": 291}, {"Date": "2025-12", "Demand": 310}
+    ];
+
+    const sampleIntermittent = [
+        {"Date": "T1", "Demand": 0}, {"Date": "T2", "Demand": 0}, {"Date": "T3", "Demand": 6},
+        {"Date": "T4", "Demand": 0}, {"Date": "T5", "Demand": 0}, {"Date": "T6", "Demand": 0},
+        {"Date": "T7", "Demand": 9}, {"Date": "T8", "Demand": 0}, {"Date": "T9", "Demand": 0},
+        {"Date": "T10", "Demand": 4}, {"Date": "T11", "Demand": 0}, {"Date": "T12", "Demand": 0},
+        {"Date": "T13", "Demand": 0}, {"Date": "T14", "Demand": 12}, {"Date": "T15", "Demand": 0},
+        {"Date": "T16", "Demand": 0}, {"Date": "T17", "Demand": 7}, {"Date": "T18", "Demand": 0},
+        {"Date": "T19", "Demand": 0}, {"Date": "T20", "Demand": 0}, {"Date": "T21", "Demand": 10},
+        {"Date": "T22", "Demand": 0}, {"Date": "T23", "Demand": 0}, {"Date": "T24", "Demand": 5}
+    ];
+
+    window.onload = function() {
+        loadSampleData('regular');
+        toggleParamPanels();
+    };
+
+    function updateTrainSizeLabel(val) {
+        const slider = document.getElementById('train-size');
+        const maxVal = slider.max;
+        document.getElementById('v-train-size').innerText = (parseInt(val) >= parseInt(maxVal)) ? '全部 (' + maxVal + '期)' : val + ' 期';
+    }
+
+    function loadSampleData(type) {
+        rawData = (type === 'regular') ? sampleRegular : sampleIntermittent;
+        document.getElementById('file-name').innerText = (type === 'regular') ? '内置: 月度常规需求序列' : '内置: 航空/汽车零部件间歇需求序列';
+        populateSelects();
+        runAnalysis();
+    }
+
+    // CSV/Excel 文件读取
+    document.getElementById('csv-file').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if(!file) return;
+        document.getElementById('file-name').innerText = file.name;
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            const data = new Uint8Array(evt.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            rawData = XLSX.utils.sheet_to_json(firstSheet);
+            populateSelects();
+            runAnalysis();
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    function populateSelects() {
+        if(rawData.length === 0) return;
+        const keys = Object.keys(rawData[0]);
+        const timeSelect = document.getElementById('time-col');
+        const valSelect = document.getElementById('val-col');
+
+        timeSelect.innerHTML = '';
+        valSelect.innerHTML = '';
+
+        keys.forEach(k => {
+            timeSelect.innerHTML += `<option value="${k}">${k}</option>`;
+            valSelect.innerHTML += `<option value="${k}">${k}</option>`;
+        });
+
+        // 智能自动匹配列名
+        if(keys.length > 1) {
+            valSelect.value = keys[1];
+        }
+
+        // 更新训练期数滑动条的最大值
+        const trainSlider = document.getElementById('train-size');
+        trainSlider.max = rawData.length;
+        trainSlider.value = rawData.length;
+        updateTrainSizeLabel(rawData.length);
+    }
+
+    function toggleParamPanels() {
+        const model = document.getElementById('model-select').value;
+        // 隐藏所有面板项
+        document.querySelectorAll('.param-item').forEach(el => el.style.display = 'none');
+
+        if(model === 'sma' || model === 'wma') {
+            document.getElementById('p-window').style.display = 'flex';
+        } else if(model === 'ses') {
+            document.getElementById('p-alpha').style.display = 'flex';
+        } else if(model === 'des') {
+            document.getElementById('p-alpha').style.display = 'flex';
+            document.getElementById('p-beta').style.display = 'flex';
+        } else if(model === 'tes') {
+            document.getElementById('p-alpha').style.display = 'flex';
+            document.getElementById('p-beta').style.display = 'flex';
+            document.getElementById('p-gamma').style.display = 'flex';
+            document.getElementById('p-period').style.display = 'flex';
+        } else if(model === 'arma' || model === 'arima') {
+            document.getElementById('p-orders').style.display = 'flex';
+        } else if(model === 'sarima' || model === 'sarimax') {
+            document.getElementById('p-orders').style.display = 'flex';
+            document.getElementById('p-sorders').style.display = 'flex';
+            document.getElementById('p-period').style.display = 'flex';
+        } else if(model.startsWith('croston_')) {
+            document.getElementById('p-alpha').style.display = 'flex';
+            if(model === 'croston_tsb') {
+                document.getElementById('p-beta').style.display = 'flex';
+            }
+        }
+    }
+
+    // 正态分布 Z 分位数查找表
+    function getZValue(ci) {
+        switch(parseFloat(ci)) {
+            case 0.80: return 1.282;
+            case 0.90: return 1.645;
+            case 0.95: return 1.960;
+            case 0.99: return 2.576;
+            default: return 1.960;
+        }
+    }
+
+    // 算法引擎
+    function forecastAlgorithm(modelKey, data, horizon, params) {
+        const n = data.length;
+        let fit = new Array(n).fill(null);
+        let future = new Array(horizon).fill(0);
+
+        if(n === 0) return { fit, future };
+
+        if(modelKey === 'naive') {
+            for(let i=1; i<n; i++) fit[i] = data[i-1];
+            const lastVal = data[n-1];
+            future.fill(lastVal);
+        } 
+        else if(modelKey === 'sma') {
+            const w = Math.min(parseInt(params.window), n);
+            for(let i=w; i<n; i++) {
+                let sum = 0;
+                for(let j=i-w; j<i; j++) sum += data[j];
+                fit[i] = sum / w;
+            }
+            let sumLast = 0;
+            for(let j=n-w; j<n; j++) sumLast += data[j];
+            const avg = sumLast / w;
+            future.fill(avg);
+        }
+        else if(modelKey === 'wma') {
+            const w = Math.min(parseInt(params.window), n);
+            let weights = [];
+            let weightSum = 0;
+            for(let i=1; i<=w; i++) { weights.push(i); weightSum += i; }
+            for(let i=w; i<n; i++) {
+                let sum = 0;
+                for(let j=0; j<w; j++) sum += data[i-w+j] * weights[j];
+                fit[i] = sum / weightSum;
+            }
+            let sumLast = 0;
+            for(let j=0; j<w; j++) sumLast += data[n-w+j] * weights[j];
+            const fVal = sumLast / weightSum;
+            future.fill(fVal);
+        }
+        else if(modelKey === 'ses') {
+            const a = parseFloat(params.alpha);
+            fit[0] = data[0];
+            for(let i=1; i<n; i++) {
+                fit[i] = a * data[i-1] + (1 - a) * fit[i-1];
+            }
+            const lastF = a * data[n-1] + (1 - a) * fit[n-1];
+            future.fill(lastF);
+        }
+        else if(modelKey === 'des') {
+            const a = parseFloat(params.alpha);
+            const b = parseFloat(params.beta);
+            let l = data[0];
+            let t = (n > 1) ? data[1] - data[0] : 0;
+            fit[0] = l;
+            for(let i=1; i<n; i++) {
+                let prevL = l;
+                l = a * data[i] + (1 - a) * (l + t);
+                t = b * (l - prevL) + (1 - b) * t;
+                fit[i] = prevL + t;
+            }
+            for(let h=1; h<=horizon; h++) {
+                future[h-1] = l + h * t;
+            }
+        }
+        else if(modelKey === 'tes') {
+            const a = parseFloat(params.alpha);
+            const b = parseFloat(params.beta);
+            const g = parseFloat(params.gamma);
+            const m = parseInt(params.period);
+            
+            let l = data[0];
+            let t = 0;
+            let s = new Array(m).fill(1.0);
+
+            for(let i=0; i<n; i++) {
+                let idx = i % m;
+                if(i < m) {
+                    fit[i] = data[i];
+                } else {
+                    let prevL = l;
+                    l = a * (data[i] - s[idx]) + (1 - a) * (l + t);
+                    t = b * (l - prevL) + (1 - b) * t;
+                    s[idx] = g * (data[i] - l) + (1 - g) * s[idx];
+                    fit[i] = prevL + t + s[idx];
+                }
+            }
+            for(let h=1; h<=horizon; h++) {
+                let idx = (n + h - 1) % m;
+                future[h-1] = l + h * t + s[idx];
+            }
+        }
+        else if(modelKey === 'arma' || modelKey === 'arima' || modelKey === 'sarima' || modelKey === 'sarimax') {
+            const p = parseInt(params.p) || 1;
+            const d = parseInt(params.d) || 0;
+            const q = parseInt(params.q) || 1;
+
+            let diffData = [...data];
+            if(d > 0) {
+                diffData = [];
+                for(let i=d; i<data.length; i++) diffData.push(data[i] - data[i-d]);
+            }
+
+            const mean = diffData.reduce((a,b)=>a+b, 0) / (diffData.length || 1);
+            let phi = 0.6 / Math.max(1, p);
+            
+            for(let i=p; i<n; i++) {
+                let val = mean;
+                for(let j=1; j<=p; j++) {
+                    val += phi * (data[i-j] - mean);
+                }
+                fit[i] = val;
+            }
+
+            let lastVal = data[n-1];
+            for(let h=1; h<=horizon; h++) {
+                let f = mean + Math.pow(phi, h) * (lastVal - mean);
+                if(modelKey === 'sarima' || modelKey === 'sarimax') {
+                    const period = parseInt(params.period) || 12;
+                    let seasonalFactor = (n >= period) ? (data[n - period + ((h-1)%period)] - mean) * 0.3 : 0;
+                    f += seasonalFactor;
+                }
+                future[h-1] = f;
+            }
+        }
+        else if(modelKey.startsWith('croston_')) {
+            const a = parseFloat(params.alpha);
+            const b = parseFloat(params.beta) || a;
+            
+            let z = 0, p = 1;
+            let firstNonZero = false;
+            let qCounter = 0;
+
+            for(let i=0; i<n; i++) {
+                qCounter++;
+                if(data[i] !== 0) {
+                    if(!firstNonZero) {
+                        z = data[i];
+                        p = qCounter;
+                        firstNonZero = true;
+                    } else {
+                        z = a * data[i] + (1 - a) * z;
+                        if(modelKey === 'croston_tsb') {
+                            p = b * 1 + (1 - b) * p;
+                        } else {
+                            p = a * qCounter + (1 - a) * p;
+                        }
+                    }
+                    qCounter = 0;
+                } else {
+                    if(modelKey === 'croston_tsb') {
+                        p = (1 - b) * p;
+                    }
+                }
+
+                let rate = 0;
+                if(modelKey === 'croston_orig') rate = z / Math.max(1, p);
+                else if(modelKey === 'croston_sba') rate = (1 - a/2) * (z / Math.max(1, p));
+                else if(modelKey === 'croston_sbj') rate = (1 - a/(2-a)) * (z / Math.max(1, p));
+                else if(modelKey === 'croston_tsb') rate = z * p;
+
+                fit[i] = rate;
+            }
+
+            let lastRate = fit[n-1] || 0;
+            future.fill(lastRate);
+        }
+
+        return { fit, future };
+    }
+
+    // 误差计算模块
+    function calculateMetrics(actual, fit) {
+        let n = 0;
+        let sumAbsError = 0;
+        let sumSqError = 0;
+        let sumAbsPctError = 0;
+        let sumSymmetricPctError = 0;
+        let sumActual = 0;
+
+        for(let i=0; i<actual.length; i++) {
+            if(fit[i] !== null && fit[i] !== undefined) {
+                const y = actual[i];
+                const f = fit[i];
+                const err = y - f;
+                const absErr = Math.abs(err);
+
+                sumAbsError += absErr;
+                sumSqError += err * err;
+                sumActual += Math.abs(y);
+
+                if(y !== 0) {
+                    sumAbsPctError += Math.abs(err / y);
+                }
+                
+                const denom = (Math.abs(y) + Math.abs(f)) / 2;
+                if(denom !== 0) {
+                    sumSymmetricPctError += absErr / denom;
+                }
+                n++;
+            }
+        }
+
+        if(n === 0) return { mae: 0, rmse: 0, mape: 0, mse: 0, smape: 0, wmape: 0 };
+
+        const mae = sumAbsError / n;
+        const mse = sumSqError / n;
+        const rmse = Math.sqrt(mse);
+        const mape = (sumAbsPctError / n) * 100;
+        const smape = (sumSymmetricPctError / n) * 100;
+        const wmape = (sumActual !== 0) ? (sumAbsError / sumActual) * 100 : 0;
+
+        return { mae, rmse, mape, mse, smape, wmape };
+    }
+
+    // 全模型竞赛扫描
+    function runAllModelsComparison(trainData, horizon, currentParams) {
+        const allModels = [
+            'naive', 'sma', 'wma', 'ses', 'des', 'tes', 
+            'arma', 'arima', 'sarima', 'croston_orig', 'croston_sba', 'croston_sbj', 'croston_tsb'
+        ];
+
+        let results = {};
+        allModels.forEach(mKey => {
+            const { fit } = forecastAlgorithm(mKey, trainData, horizon, currentParams);
+            const metrics = calculateMetrics(trainData, fit);
+            results[mKey] = metrics;
+        });
+
+        return results;
+    }
+
+    function findBestModels(compResults) {
+        const metricsList = ['mae', 'rmse', 'mape', 'mse', 'smape', 'wmape'];
+        let bestMap = {};
+
+        metricsList.forEach(m => {
+            let sorted = Object.keys(compResults).map(k => ({
+                model: k,
+                val: compResults[k][m]
+            })).sort((a,b) => a.val - b.val);
+
+            let valid = sorted.filter(x => !isNaN(x.val) && x.val >= 0);
+            let top3 = valid.slice(0, 3).map(x => getModelLabel(x.model));
+            bestMap[m] = top3.join(', ');
+        });
+
+        return bestMap;
+    }
+
+    function getModelLabel(key) {
+        const labels = {
+            'naive': '朴素预测', 'sma': '移动平均', 'wma': '加权移动平均',
+            'ses': '单指数平滑', 'des': '双指数平滑', 'tes': '三指数平滑',
+            'arma': 'ARMA', 'arima': 'ARIMA', 'sarima': 'SARIMA',
+            'croston_orig': '原始克罗斯顿', 'croston_sba': '克罗斯顿SBA',
+            'croston_sbj': '克罗斯顿SBJ', 'croston_tsb': '克罗斯顿TSB'
+        };
+        return labels[key] || key;
+    }
+
+    // 主运行分析入口
+    function runAnalysis() {
+        if(rawData.length === 0) return;
+
+        const timeCol = document.getElementById('time-col').value;
+        const valCol = document.getElementById('val-col').value;
+
+        parsedTimes = rawData.map(r => r[timeCol]);
+        parsedValues = rawData.map(r => parseFloat(r[valCol]) || 0);
+
+        const totalN = parsedValues.length;
+        const trainSizeVal = parseInt(document.getElementById('train-size').value);
+        const trainSize = Math.min(trainSizeVal, totalN);
+        const startIndex = totalN - trainSize; // 截取训练集的起始位置
+
+        // 划分训练数据与未参与训练的数据
+        const trainValues = parsedValues.slice(startIndex);
+
+        const currentModel = document.getElementById('model-select').value;
+        const horizon = parseInt(document.getElementById('forecast-horizon').value);
+        const ciLevel = parseFloat(document.getElementById('ci-level').value);
+        const zVal = getZValue(ciLevel);
+
+        const params = {
+            window: document.getElementById('param-window').value,
+            alpha: document.getElementById('param-alpha').value,
+            beta: document.getElementById('param-beta').value,
+            gamma: document.getElementById('param-gamma').value,
+            period: document.getElementById('param-period').value,
+            p: document.getElementById('param-p').value,
+            d: document.getElementById('param-d').value,
+            q: document.getElementById('param-q').value,
+            sp: document.getElementById('param-sp').value,
+            sd: document.getElementById('param-sd').value,
+            sq: document.getElementById('param-sq').value
+        };
+
+        // 1. 当前模型在训练集上计算
+        const { fit: trainFit, future } = forecastAlgorithm(currentModel, trainValues, horizon, params);
+        
+        // 拼接成完整的 fit 数组（非训练期填 null）
+        let fit = new Array(totalN).fill(null);
+        for(let i = 0; i < trainSize; i++) {
+            fit[startIndex + i] = trainFit[i];
+        }
+
+        const currentMetrics = calculateMetrics(trainValues, trainFit);
+
+        // 渲染当前指标卡片
+        document.getElementById('m-mae').innerText = currentMetrics.mae.toFixed(2);
+        document.getElementById('m-rmse').innerText = currentMetrics.rmse.toFixed(2);
+        document.getElementById('m-mape').innerText = currentMetrics.mape.toFixed(2) + '%';
+        document.getElementById('m-mse').innerText = currentMetrics.mse.toFixed(2);
+        document.getElementById('m-smape').innerText = currentMetrics.smape.toFixed(2) + '%';
+        document.getElementById('m-wmape').innerText = currentMetrics.wmape.toFixed(2) + '%';
+
+        // 2. 运行全模型竞赛
+        const allCompResults = runAllModelsComparison(trainValues, horizon, params);
+        const bestModelsMap = findBestModels(allCompResults);
+
+        document.getElementById('best-mae').innerText = '最佳: ' + bestModelsMap.mae;
+        document.getElementById('best-rmse').innerText = '最佳: ' + bestModelsMap.rmse;
+        document.getElementById('best-mape').innerText = '最佳: ' + bestModelsMap.mape;
+        document.getElementById('best-mse').innerText = '最佳: ' + bestModelsMap.mse;
+        document.getElementById('best-smape').innerText = '最佳: ' + bestModelsMap.smape;
+        document.getElementById('best-wmape').innerText = '最佳: ' + bestModelsMap.wmape;
+
+        // 3. 计算残差标准差与置信区间
+        const stdDev = currentMetrics.rmse;
+        let lowerBoundsFit = [], upperBoundsFit = [];
+        let lowerBoundsFuture = [], upperBoundsFuture = [];
+
+        for(let i=0; i<fit.length; i++) {
+            if(fit[i] !== null) {
+                lowerBoundsFit.push(fit[i] - zVal * stdDev);
+                upperBoundsFit.push(fit[i] + zVal * stdDev);
+            } else {
+                lowerBoundsFit.push(null);
+                upperBoundsFit.push(null);
+            }
+        }
+
+        for(let h=0; h<future.length; h++) {
+            const stepStd = stdDev * Math.sqrt(h + 1);
+            lowerBoundsFuture.push(future[h] - zVal * stepStd);
+            upperBoundsFuture.push(future[h] + zVal * stepStd);
+        }
+
+        // 4. 渲染 Chart.js 图表
+        renderChart(parsedTimes, parsedValues, fit, future, lowerBoundsFuture, upperBoundsFuture);
+
+        // 5. 渲染表格
+        renderTable(parsedTimes, parsedValues, fit, future, lowerBoundsFit, upperBoundsFit, lowerBoundsFuture, upperBoundsFuture);
+    }
+
+    function renderChart(times, actual, fit, future, lowerFuture, upperFuture) {
+        const ctx = document.getElementById('forecastChart').getContext('2d');
+        if(forecastChart) forecastChart.destroy();
+
+        const n = actual.length;
+        const horizon = future.length;
+
+        let extendedTimes = [...times];
+        for(let h=1; h<=horizon; h++) {
+            extendedTimes.push(`预测 T+${h}`);
+        }
+
+        let actualData = [...actual, ...new Array(horizon).fill(null)];
+        let fitData = [...fit, ...new Array(horizon).fill(null)];
+        
+        let futureData = new Array(n - 1).fill(null);
+        futureData.push(fit[n-1] !== null ? fit[n-1] : actual[n-1]);
+        futureData.push(...future);
+
+        let lowerData = new Array(n - 1).fill(null);
+        lowerData.push(fit[n-1] !== null ? fit[n-1] : actual[n-1]);
+        lowerData.push(...lowerFuture);
+
+        let upperData = new Array(n - 1).fill(null);
+        upperData.push(fit[n-1] !== null ? fit[n-1] : actual[n-1]);
+        upperData.push(...upperFuture);
+
+        // ====== UI 绑定：在 Chart.js 中注入作者水印 ======
+        const watermarkPlugin = {
+            id: 'watermark',
+            afterDraw: (chart) => {
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.font = 'bold 24px "Microsoft YaHei", sans-serif';
+                ctx.fillStyle = 'rgba(148, 163, 184, 0.12)'; // 非常淡的灰色
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.translate(chart.width / 2, chart.height / 2);
+                ctx.rotate(-Math.PI / 8); // 旋转一定角度
+                ctx.fillText('林梦龙', 0, 0);
+                ctx.restore();
+            }
+        };
+        // 注册插件
+        Chart.register(watermarkPlugin);
+        // ===============================================
+
+        forecastChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: extendedTimes,
+                datasets: [
+                    {
+                        label: '实际历史需求 (Actual)',
+                        data: actualData,
+                        borderColor: '#f59e0b',
+                        backgroundColor: '#f59e0b',
+                        borderWidth: 2,
+                        pointRadius: 3
+                    },
+                    {
+                        label: '模型历史拟合 (Fit)',
+                        data: fitData,
+                        borderColor: '#3b82f6',
+                        borderWidth: 2,
+                        borderDash: [3, 3],
+                        pointRadius: 0
+                    },
+                    {
+                        label: '未来预测 (Forecast)',
+                        data: futureData,
+                        borderColor: '#10b981',
+                        backgroundColor: '#10b981',
+                        borderWidth: 3,
+                        pointRadius: 4
+                    },
+                    {
+                        label: '置信上限 (Upper)',
+                        data: upperData,
+                        borderColor: 'transparent',
+                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                        fill: '+1',
+                        pointRadius: 0
+                    },
+                    {
+                        label: '置信下限 (Lower)',
+                        data: lowerData,
+                        borderColor: 'transparent',
+                        backgroundColor: 'transparent',
+                        fill: false,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                scales: {
+                    x: {
+                        grid: { color: '#334155' },
+                        ticks: { color: '#94a3b8' }
+                    },
+                    y: {
+                        grid: { color: '#334155' },
+                        ticks: { color: '#94a3b8' }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: { color: '#f8fafc' }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderTable(times, actual, fit, future, lowerFit, upperFit, lowerFuture, upperFuture) {
+        const tbody = document.querySelector('#result-table tbody');
+        tbody.innerHTML = '';
+
+        // 1. 历史段
+        for(let i=0; i<actual.length; i++) {
+            const time = times[i];
+            const act = actual[i];
+            const f = fit[i] !== null ? fit[i].toFixed(2) : '-';
+            const err = fit[i] !== null ? (act - fit[i]).toFixed(2) : '-';
+            const low = lowerFit[i] !== null ? lowerFit[i].toFixed(2) : '-';
+            const up = upperFit[i] !== null ? upperFit[i].toFixed(2) : '-';
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${time}</td>
+                    <td>${act}</td>
+                    <td style="color:#60a5fa">${f}</td>
+                    <td>${err}</td>
+                    <td style="color:#94a3b8">${low}</td>
+                    <td style="color:#94a3b8">${up}</td>
+                </tr>
+            `;
+        }
+
+        // 2. 预测段
+        for(let h=0; h<future.length; h++) {
+            const time = `预测 T+${h+1}`;
+            const f = future[h].toFixed(2);
+            const low = lowerFuture[h].toFixed(2);
+            const up = upperFuture[h].toFixed(2);
+
+            tbody.innerHTML += `
+                <tr style="background: rgba(16, 185, 129, 0.05);">
+                    <td style="color:#10b981; font-weight:bold;">${time}</td>
+                    <td>-</td>
+                    <td style="color:#10b981; font-weight:bold;">${f}</td>
+                    <td>-</td>
+                    <td style="color:#10b981">${low}</td>
+                    <td style="color:#10b981">${up}</td>
+                </tr>
+            `;
+        }
+    }
+
+    // ====== UI 绑定：导出 CSV 时强制加入版权信息与文件名标识 ======
+    function exportCSV() {
+        const table = document.getElementById('result-table');
+        let csv = [];
+        
+        // 插入版权声明头
+        csv.push('"=== 时间序列预测与供应链智能分析平台 ==="');
+        csv.push('"作者：林梦龙"');
+        csv.push('"版权声明：本结果受版权保护，未经授权禁止商用及二次分发。"');
+        csv.push('');
+
+        for(let i=0; i<table.rows.length; i++) {
+            let row = [], cols = table.rows[i].cells;
+            for(let j=0; j<cols.length; j++) {
+                let text = cols[j].innerText.replace(/"/g, '""');
+                row.push(`"${text}"`);
+            }
+            csv.push(row.join(","));
+        }
+        
+        // 加入 \uFEFF 声明 utf-8 编码，彻底解决 Excel 打开乱码问题
+        const csvContent = "\uFEFF" + csv.join("\n");
+        const csvFile = new Blob([csvContent], {type: "text/csv;charset=utf-8;"});
+        const downloadLink = document.createElement("a");
+        
+        // 强制在文件名中加入作者名
+        downloadLink.download = "林梦龙_时间序列预测结果_" + new Date().getTime() + ".csv";
+        
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.style.display = "none";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    }
+    // ==============================================================
+</script>
+</body>
+</html>
