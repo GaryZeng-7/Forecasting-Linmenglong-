@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>安全库存智能计算器（三法对比） · 分布识别 By 林梦龙</title>
+<!-- 版权声明与作者信息 -->
+<meta name="author" content="林梦龙">
+<meta name="copyright" content="Copyright © 2024 林梦龙. 保留所有权利。未经授权，禁止商用及二次分发。">
+<meta name="description" content="安全库存智能计算器，作者：林梦龙">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#0b101d;
+    --card:#121929;
+    --card-inner:#0d1322;
+    --line:#1e293b;
+    --line-light:#28354e;
+    --txt:#e2e8f0;
+    --mut:#8a99ad;
+    --pri:#2563eb;
+    --pri-hover:#1d4ed8;
+    --accent:#3b82f6;
+    --ok:#10b981;
+    --warn:#f59e0b;
+    --bad:#ef4444;
+    --input-bg:#0f172a;
+    --input-border:#2a3a58;
+    --tag-purple-bg: rgba(88, 28, 135, 0.4);
+    --tag-purple-border: rgba(147, 51, 234, 0.5);
+    --tag-purple-text: #c084fc;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--txt);
+    font:14px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  .wrap{
+    display:grid;
+    grid-template-columns:380px minmax(0,1fr);
+    gap:18px;
+    padding:20px;
+    max-width:1700px;
+    margin:0 auto;
+    align-items:start
+  }
+  @media(max-width:1080px){.wrap{grid-template-columns:1fr}}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px 20px;
+    box-shadow:0 4px 16px rgba(0,0,0,0.3);
+    margin-bottom:16px
+  }
+  .card h2{
+    margin:0 0 16px;
+    font-size:15px;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    font-weight:600;
+    color:#f8fafc;
+    border-bottom:1px solid rgba(255,255,255,0.05);
+    padding-bottom:10px;
+  }
+  .card h2 .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--accent);flex:none;box-shadow:0 0 8px var(--accent)
+  }
+  h3{margin:0 0 12px;font-size:13.5px;color:#cbd5e1;font-weight:600;letter-spacing:.02em}
+  .brand{font-size:18px;font-weight:700;letter-spacing:.01em;margin-bottom:6px;color:#ffffff;display:flex;align-items:center;gap:8px}
+  .hint{color:var(--mut);font-size:12.5px;margin:0 0 14px;line-height:1.5}
+
+  .drop{
+    display:flex;align-items:center;justify-content:center;height:86px;
+    border:1.5px dashed var(--input-border);border-radius:8px;cursor:pointer;
+    background:var(--input-bg);color:var(--mut);font-size:13px;transition:.18s;
+    text-align:center;padding:10px
+  }
+  .drop:hover,.drop.on{border-color:var(--accent);background:#1a243a;color:#60a5fa}
+  .row{display:flex;gap:10px;align-items:center;margin-bottom:11px}
+  .row label{flex:0 0 104px;font-size:12.5px;color:#94a3b8}
+  select,input[type=number],input[type=text]{
+    flex:1;min-width:0;padding:7px 10px;border:1px solid var(--input-border);
+    border-radius:6px;font-size:13px;background:var(--input-bg);color:var(--txt);
+    outline:none;font-family:inherit;transition:.15s
+  }
+  select:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.25)}
+  .suffix{color:#94a3b8;font-size:13px;flex:none;padding-right:2px}
+  .btn{
+    display:block;width:100%;padding:9px 14px;border-radius:6px;border:none;
+    cursor:pointer;font-size:13.5px;font-weight:600;font-family:inherit;transition:.16s
+  }
+  .btn.primary{background:var(--pri);color:#fff;box-shadow:0 2px 10px rgba(37,99,235,.3)}
+  .btn.primary:hover{background:var(--pri-hover)}
+  .btn.ghost{
+    background:#1e293b;color:#e2e8f0;border:1px solid var(--line-light);
+    margin-top:10px;font-size:13px;padding:8px
+  }
+  .btn.ghost:hover{background:#2a3a58;color:#fff}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+  th{background:var(--card-inner);font-weight:600;color:#94a3b8;font-size:12px;white-space:nowrap}
+  tbody tr{transition:.12s}
+  tbody tr:hover{background:#182238}
+  td.n{
+    text-align:right;font-variant-numeric:tabular-nums;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:nowrap
+  }
+  .small{font-size:12px;color:var(--mut)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+  .kpi{background:var(--card-inner);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+  .kpi .k{font-size:11.5px;color:var(--mut);margin-bottom:4px}
+  .kpi .v{font-size:16px;font-weight:700;color:#f1f5f9;font-variant-numeric:tabular-nums}
+
+  .pill{display:inline-block;padding:2px 10px;border-radius:4px;font-size:11.5px;font-weight:600;line-height:1.6}
+  .pill.ok{background:rgba(16,185,129,.15);color:#34d399;border:1px solid rgba(16,185,129,.3)}
+  .pill.warn{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.3)}
+  .pill.bad{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.3)}
+  .pill.info{background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.3)}
+  .pill.purple{background:rgba(147,51,234,.15);color:#c084fc;border:1px solid rgba(147,51,234,.3)}
+
+  .banner{
+    padding:14px 18px;border-radius:8px;background:var(--tag-purple-bg);
+    border:1px solid var(--tag-purple-border);margin-bottom:16px
+  }
+  .banner .t{font-size:14px;font-weight:700;margin-bottom:4px;color:#f3e8ff}
+  .banner .s{font-size:13px;color:var(--tag-purple-text)}
+
+  .adv{display:flex;flex-wrap:wrap;gap:12px}
+  .adv .box{flex:1 1 170px;background:var(--card-inner);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+  .adv .box .lab{font-size:12px;color:var(--mut)}
+  .adv .box .val{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:4px;color:#f8fafc}
+
+  .empty{color:var(--mut);text-align:center;padding:56px 20px;font-size:14px}
+  .chk{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#cbd5e1;margin:6px 0;cursor:pointer}
+  .chk input{width:15px;height:15px;accent-color:var(--pri);flex:none;cursor:pointer}
+  .methods{display:grid;grid-template-columns:1fr;gap:4px 12px}
+  .legend{font-size:12px;color:var(--mut);margin-top:12px;line-height:1.7}
+  .legend code{background:#1a233a;color:#93c5fd;padding:2px 6px;border-radius:4px;font-size:11.5px;border:1px solid var(--line)}
+
+  .chart-wrap{
+    position:relative;width:100%;height:320px;margin-bottom:6px;
+    background:var(--card-inner);border:1px solid var(--line);border-radius:8px;overflow:hidden
+  }
+  #distChart{width:100%;height:100%;display:block}
+  .chart-legend{
+    display:flex;flex-wrap:wrap;gap:18px;align-items:center;
+    font-size:12px;color:var(--mut);margin:10px 2px 16px
+  }
+  .chart-legend .item{display:flex;align-items:center;gap:7px}
+  .chart-legend .sw{width:22px;height:0;border-top:2.5px dashed var(--warn);flex:none}
+  .chart-legend .sw.bar{
+    width:16px;height:12px;border-top:none;border-radius:2px;
+    background:linear-gradient(180deg,rgba(96,165,250,.9),rgba(37,99,235,.25));
+    border:1px solid rgba(147,197,253,.6)
+  }
+  .chart-badge{
+    display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;
+    font-size:12px;font-weight:600;
+    background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.35)
+  }
+
+  .picker{
+    display:flex;flex-wrap:wrap;gap:12px;align-items:center;
+    padding:12px 14px;border-radius:8px;margin-bottom:14px;
+    background:linear-gradient(90deg,rgba(37,99,235,.10),rgba(37,99,235,.02));
+    border:1px solid rgba(59,130,246,.28);
+  }
+  .picker .plab{font-size:12.5px;color:#93c5fd;font-weight:600;flex:none}
+  .picker select{max-width:460px;flex:1}
+  .picker .cur{font-size:12px;color:var(--mut)}
+
+  /* ===== 广告横幅 ===== */
+  .ad-banner{
+    position:relative;
+    border-radius:14px;
+    padding:20px 26px 22px;
+    margin-bottom:18px;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(251,191,36,.22), transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(168,85,247,.25), transparent 50%),
+      linear-gradient(120deg,#1b0a33 0%,#2c0f4d 35%,#3c1361 55%,#1b0a33 100%);
+    border:2px solid rgba(251,191,36,.75);
+    box-shadow:
+      0 0 0 1px rgba(251,191,36,.25) inset,
+      0 0 40px rgba(251,191,36,.28),
+      0 8px 28px rgba(0,0,0,.55);
+    overflow:hidden;
+    animation:adGlow 3.6s ease-in-out infinite alternate;
+  }
+  @keyframes adGlow{
+    from{ box-shadow: 0 0 0 1px rgba(251,191,36,.25) inset, 0 0 28px rgba(251,191,36,.20), 0 8px 28px rgba(0,0,0,.55); }
+    to  { box-shadow: 0 0 0 1px rgba(251,191,36,.45) inset, 0 0 55px rgba(251,191,36,.42), 0 8px 28px rgba(0,0,0,.55); }
+  }
+  .ad-banner::before{
+    content:"";
+    position:absolute; top:0; left:-60%;
+    width:45%; height:100%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.14),transparent);
+    transform:skewX(-20deg);
+    animation:adSweep 4.5s linear infinite;
+    pointer-events:none;
+  }
+  @keyframes adSweep{
+    0%{ left:-60%; }
+    60%{ left:130%; }
+    100%{ left:130%; }
+  }
+  .ad-line{
+    font-size:15px; color:#f5e9ff; line-height:1.95; font-weight:600;
+    position:relative; z-index:2;
+  }
+  .ad-books{
+    display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px;
+    margin-top:6px; position:relative; z-index:2;
+  }
+  .ad-and{ font-size:14px; color:#e9d5ff; font-weight:700; }
+
+  .hl-name{
+    display:inline-block;
+    font-weight:900;
+    font-size:1.22em;
+    letter-spacing:.10em;
+    padding:0 4px;
+    background:linear-gradient(92deg,#ffffff 0%,#f8fafc 25%,#e2e8f0 45%,#ffffff 65%,#f1f5f9 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    filter:drop-shadow(0 0 8px rgba(255,255,255,.95)) drop-shadow(0 0 22px rgba(226,232,240,.55));
+    animation:namePulse 2.2s ease-in-out infinite alternate;
+  }
+  @keyframes namePulse{
+    from{ filter:drop-shadow(0 0 6px rgba(255,255,255,.7)) drop-shadow(0 0 16px rgba(226,232,240,.35)); }
+    to  { filter:drop-shadow(0 0 14px rgba(255,255,255,1)) drop-shadow(0 0 34px rgba(226,232,240,.8)); }
+  }
+
+  .hl-book{
+    display:inline-block;
+    font-weight:800;
+    font-size:1.06em;
+    letter-spacing:.02em;
+    padding:3px 12px;
+    border-radius:8px;
+    background:linear-gradient(100deg, rgba(56,189,248,.16), rgba(168,85,247,.20));
+    border:1.5px solid rgba(56,189,248,.75);
+    box-shadow:0 0 14px rgba(56,189,248,.35), inset 0 0 14px rgba(168,85,247,.18);
+    color:#fff8dc;
+    text-shadow:0 0 10px rgba(56,189,248,.9), 0 0 18px rgba(251,191,36,.45);
+    transition:.2s;
+  }
+  .hl-book:hover{
+    transform:translateY(-1px);
+    box-shadow:0 0 22px rgba(56,189,248,.65), inset 0 0 18px rgba(168,85,247,.28);
+  }
+  .ad-tail{
+    font-size:14px; color:#fde68a; font-weight:800;
+    letter-spacing:.06em;
+    text-shadow:0 0 10px rgba(251,191,36,.75), 0 0 18px rgba(245,158,11,.45);
+    margin-left:2px;
+  }
+  @media(max-width:640px){
+    .ad-banner{padding:16px 16px 18px}
+    .ad-line{font-size:13.5px}
+    .hl-name{font-size:1.14em}
+    .hl-book{font-size:.98em; padding:2px 9px}
+  }
+
+  /* 页脚版权声明 */
+  .footer-copyright {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 20px;
+    margin-top: 20px;
+    font-size: 0.8rem;
+    color: #64748b;
+    border-top: 1px dashed var(--line);
+  }
+  .footer-copyright span {
+    color: #f59e0b;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ==================== 左侧 ==================== -->
+  <aside>
+    <div class="card">
+      <div class="brand">📦 安全库存智能计算器 By 林梦龙</div>
+      <p class="hint">导入历史需求 / 在途库存 / 现有库存 / 提前期数据，自动识别需求分布，并对比三种常用安全库存算法。</p>
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept=".xlsx,.xls,.csv" hidden>
+        <span id="dropText">点击选择，或把 Excel / CSV 拖到这里</span>
+      </label>
+      <button class="btn ghost" id="demoBtn">载入示例数据</button>
+    </div>
+
+    <div class="card" id="mapCard" hidden>
+      <h3>列映射</h3>
+      <div class="row"><label>需求列</label><select id="colDemand"></select></div>
+      <div class="row"><label>在途库存</label><select id="colTransit"></select></div>
+      <div class="row"><label>现有库存</label><select id="colOnhand"></select></div>
+      <div class="row"><label>提前期</label><select id="colLead"></select></div>
+    </div>
+
+    <div class="card">
+      <h3>参数设置</h3>
+
+      <div class="row">
+        <label>服务水平</label>
+        <div style="flex:1;display:flex;align-items:center;gap:6px">
+          <input type="number" id="sl" value="95" min="50" max="99.99" step="0.01">
+          <span class="suffix">%</span>
+        </div>
+      </div>
+      <div class="small" style="margin:-4px 0 12px 114px;color:#64748b">
+        可输入 50 ~ 99.99，默认 95
+      </div>
+
+      <div class="row"><label>提前期(天)</label><input type="number" id="leadTime" value="7" min="0.01" step="0.5"></div>
+      <div class="row"><label>提前期 σ</label><input type="number" id="leadStd" value="0" step="0.1" min="0"></div>
+      <div class="row"><label>现有库存</label><input type="number" id="onHand" value="0" step="1"></div>
+      <div class="row"><label>在途库存</label><input type="number" id="inTransit" value="0" step="1"></div>
+
+      <div class="row" style="align-items:flex-start">
+        <label style="padding-top:7px">切比雪夫 α</label>
+        <div style="flex:1">
+          <label class="chk"><input type="checkbox" id="useManualAlpha"> 单独指定缺货概率（%）</label>
+          <input type="number" id="manualAlphaPct" value="5" step="0.5" min="0.1" max="50" disabled style="margin-top:4px">
+          <div class="small" style="margin-top:4px">
+            单位 <code>%</code>（缺货概率 α）。不勾选时使用左侧服务水平对应的 α。
+          </div>
+        </div>
+      </div>
+
+      <div class="legend" style="margin-top:10px;border-top:1px dashed rgba(255,255,255,.08);padding-top:10px">
+        <b style="color:#93c5fd">提示：</b>选择「提前期」列时，<code>提前期(天)</code> 与 <code>提前期 σ</code> 会自动按该列数据填充；您可直接手动覆盖。
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>参与对比的方法</h3>
+      <div class="methods" id="methodBox"></div>
+      <button class="btn primary" id="calcBtn" style="margin-top:16px">开始计算</button>
+    </div>
+  </aside>
+
+  <!-- ==================== 右侧 ==================== -->
+  <main>
+    <!-- 广告横幅 -->
+    <div class="ad-banner">
+      <div class="ad-line">
+        所有方法，请通过公众号 <span class="hl-name">林梦龙</span>，购买书籍
+      </div>
+      <div class="ad-books">
+        <span class="hl-book">《供应链库存与计划管理》</span>
+        <span class="ad-and">以及订阅</span>
+        <span class="hl-book">《AI穿透供应链：从需求预测到资金回笼的智能博弈》</span>
+        <span class="ad-tail">均可了解</span>
+      </div>
+    </div>
+
+    <div id="out">
+      <div class="card"><div class="empty">← 请先在左侧导入数据（或点击「载入示例数据」）</div></div>
+    </div>
+  </main>
+
+  <!-- 页脚版权声明 -->
+  <div class="footer-copyright">
+    版权所有 © 2024 <span>林梦龙</span>. 保留所有权利。未经授权，禁止商用及二次分发。侵权必究。
+  </div>
+</div>
+
+<script>
+/* ==================================================================
+   安全库存智能计算器（三法对比） · 分布识别
+   作者：林梦龙
+   版权：Copyright © 2024 林梦龙. 保留所有权利。
+   声明：本代码受版权保护，未经授权禁止商用及二次分发。
+   ================================================================== */
+
+// ====== 隐形水印区 (请勿删除) ======
+// 此变量为隐形水印，用于追踪代码来源，非法盗用将承担法律责任。
+const _INVISIBLE_WATERMARK_LINMENGLONG_SEC_STOCK_2024 = "林梦龙_" + "\u200b\u200b\u200b\u200b\u200b\u200b" + "_SEC_STOCK_CALC_SIGNATURE";
+// ===================================
+
+/* ==================================================================
+   0. 数学 / 统计 工具
+   ================================================================== */
+const $ = s => document.querySelector(s);
+const sum = a => a.reduce((s,x)=>s+x,0);
+const mean = a => a.length ? sum(a)/a.length : 0;
+function variance(a, m){
+  if(a.length < 2) return 0;
+  m = (m === undefined) ? mean(a) : m;
+  return a.reduce((s,x)=>s+(x-m)*(x-m),0)/(a.length-1);
+}
+
+function skewness(a){
+  const n=a.length; if(n<3) return 0;
+  const m=mean(a);
+  const s=Math.sqrt(a.reduce((t,x)=>t+(x-m)*(x-m),0)/n);
+  if(s===0) return 0;
+  return a.reduce((t,x)=>t+Math.pow((x-m)/s,3),0)/n;
+}
+function exKurtosis(a){
+  const n=a.length; if(n<4) return 0;
+  const m=mean(a);
+  const s=Math.sqrt(a.reduce((t,x)=>t+(x-m)*(x-m),0)/n);
+  if(s===0) return 0;
+  return a.reduce((t,x)=>t+Math.pow((x-m)/s,4),0)/n - 3;
+}
+
+/* 标准正态反函数 (Acklam) */
+function normInv(p){
+  if(p<=0) return -8; if(p>=1) return 8;
+  const a=[-3.969683028665376e+01,2.209460984245205e+02,-2.759285104469687e+02,1.383577518672690e+02,-3.066479806614716e+01,2.506628277459239e+00];
+  const b=[-5.447609879822406e+01,1.615858368580409e+02,-1.556989798598866e+02,6.680131188771972e+01,-1.328068155288572e+01];
+  const c=[-7.784894002430293e-03,-3.223964580411365e-01,-2.400758277161838e+00,-2.549732539343734e+00,4.374664141464968e+00,2.938163982698783e+00];
+  const d=[7.784695709041462e-03,3.224671290700398e-01,2.445134137142996e+00,3.754408661907416e+00];
+  const pl=0.02425; let q,r;
+  if(p<pl){ q=Math.sqrt(-2*Math.log(p));
+    return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1); }
+  if(p<=1-pl){ q=p-0.5; r=q*q;
+    return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1); }
+  q=Math.sqrt(-2*Math.log(1-p));
+  return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+}
+function erf(x){
+  const s=Math.sign(x); x=Math.abs(x);
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const t=1/(1+p*x);
+  const y=1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return s*y;
+}
+const normCdf = (x,mu=0,sd=1)=> 0.5*(1+erf((x-mu)/(sd*Math.SQRT2)));
+
+function normPdf(x, mu, sd){
+  if(!(sd>0)) return 0;
+  const z=(x-mu)/sd;
+  return Math.exp(-0.5*z*z)/(sd*Math.sqrt(2*Math.PI));
+}
+
+function quantile(arr, p){
+  const s=[...arr].sort((a,b)=>a-b);
+  if(!s.length) return 0;
+  const idx = p*(s.length-1);
+  const lo = Math.floor(idx), hi = Math.ceil(idx);
+  return s[lo] + (s[hi]-s[lo])*(idx-lo);
+}
+function ksStat(x, cdf){
+  const s=[...x].sort((a,b)=>a-b), n=s.length;
+  let D=0;
+  for(let i=0;i<n;i++){
+    const F=Math.min(1,Math.max(0,cdf(s[i])));
+    D = Math.max(D, Math.abs(F-(i+1)/n), Math.abs(F-i/n));
+  }
+  return D;
+}
+function ksPval(D,n){
+  const lam=(Math.sqrt(n)+0.12+0.11/Math.sqrt(n))*D;
+  if(lam<=0) return 1;
+  let s=0;
+  for(let k=1;k<=100;k++) s += Math.pow(-1,k-1)*Math.exp(-2*k*k*lam*lam);
+  return Math.min(1, Math.max(0, 2*s));
+}
+
+/* 服务水平读取（百分比 → 小数），并限制在 50 ~ 99.99 */
+function readSL(){
+  let v = parseFloat($('#sl').value);
+  if(!isFinite(v)) v = 95;
+  v = Math.max(50, Math.min(99.99, v));
+  return v/100;
+}
+function syncSLInput(){
+  let v = parseFloat($('#sl').value);
+  if(!isFinite(v)) v = 95;
+  v = Math.max(50, Math.min(99.99, v));
+  $('#sl').value = +v.toFixed(2);
+}
+
+/* ==================================================================
+   1. 数据解析
+   ================================================================== */
+const DATA = { headers: [], rows: [] };
+const fmt = (x,d=2)=> (x===null||x===undefined||!isFinite(x)) ? '—'
+  : (Math.abs(x)>=1000 ? x.toLocaleString('zh-CN',{maximumFractionDigits:d,minimumFractionDigits:d})
+                       : x.toFixed(d));
+
+function toNum(v){
+  if(v===null||v===undefined||v==='') return null;
+  if(typeof v === 'number') return isFinite(v) ? v : null;
+  const s = String(v).replace(/[,，\s%¥$]/g,'');
+  const n = parseFloat(s);
+  return isFinite(n) ? n : null;
+}
+
+function setData(rows){
+  if(!rows || !rows.length) return alert('未解析到数据行');
+  DATA.rows = rows;
+  DATA.headers = Object.keys(rows[0]);
+  const opts = ['<option value="">— 不使用 —</option>']
+    .concat(DATA.headers.map(h=>`<option value="${h}">${h}</option>`)).join('');
+
+  ['#colTransit','#colOnhand','#colLead'].forEach(id=> $(id).innerHTML = opts);
+  $('#colDemand').innerHTML = DATA.headers.map(h=>`<option value="${h}">${h}</option>`).join('');
+
+  const pat = {
+    demand : [/需求/i,/demand/i,/销量/i,/用量/i,/出货/i,/consumption/i,/qty/i,/数量/i],
+    transit: [/在途/i,/transit/i,/pipeline/i,/在运/i],
+    onhand : [/现有/i,/在库/i,/库存/i,/on.?hand/i,/stock/i,/inventory/i],
+    lead   : [/提前期/i,/lead.?time/i,/交期/i,/采购周期/i,/LT$/i]
+  };
+  const pick = (pats, exclude=[]) => {
+    for(const p of pats)
+      for(const h of DATA.headers)
+        if(!exclude.includes(h) && p.test(h)) return h;
+    return '';
+  };
+  const cTransit = pick(pat.transit);
+  const cOnhand  = pick(pat.onhand, [cTransit]);
+  const cDemand  = pick(pat.demand, [cTransit, cOnhand]);
+  const cLead    = pick(pat.lead);
+
+  if(cDemand)  $('#colDemand').value  = cDemand;
+  if(cTransit) $('#colTransit').value = cTransit;
+  if(cOnhand)  $('#colOnhand').value  = cOnhand;
+  if(cLead)    $('#colLead').value    = cLead;
+
+  const last = col => {
+    if(!col) return null;
+    for(let i=DATA.rows.length-1;i>=0;i--){
+      const v = toNum(DATA.rows[i][col]);
+      if(v!==null) return v;
+    }
+    return null;
+  };
+  const oh = last(cOnhand);  if(oh!==null) $('#onHand').value = oh;
+  const tr = last(cTransit); if(tr!==null) $('#inTransit').value = tr;
+
+  /* 自动填充提前期均值与标准差 */
+  const ltArr = cLead ? DATA.rows.map(r=>toNum(r[cLead])).filter(v=>v!==null && v>0) : [];
+  if(ltArr.length){
+    $('#leadTime').value = +mean(ltArr).toFixed(2);
+    if(ltArr.length >= 3){
+      const sd = Math.sqrt(variance(ltArr));
+      $('#leadStd').value = +sd.toFixed(3);
+    }
+  }
+
+  $('#mapCard').hidden = false;
+  compute();
+}
+
+$('#file').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = ev=>{
+    try{
+      const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      setData(XLSX.utils.sheet_to_json(ws, {defval:null}));
+      $('#dropText').textContent = `✔ ${f.name}`;
+    }catch(err){ alert('文件解析失败：'+err.message); }
+  };
+  rd.readAsArrayBuffer(f);
+});
+const drop = $('#drop');
+['dragenter','dragover'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add('on');}));
+['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('on');}));
+drop.addEventListener('drop', e=>{
+  const f = e.dataTransfer.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = ev=>{
+    try{
+      const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
+      setData(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:null}));
+      $('#dropText').textContent = `✔ ${f.name}`;
+    }catch(err){ alert('文件解析失败：'+err.message); }
+  };
+  rd.readAsArrayBuffer(f);
+});
+
+/* ==================================================================
+   2. 方法定义（仅保留三种）
+   ================================================================== */
+const METHODS = [
+  { id:'normal',  name:'正态分布经典公式', tag:'正态',
+    desc:'SS = z·σ_LT，假设提前期需求服从正态分布' },
+  { id:'cantelli',name:'切比雪夫单边不等式', tag:'无分布',
+    desc:'坎泰利不等式，仅用均值与方差，保守但无需分布假设' },
+  { id:'histq',   name:'历史分位法', tag:'经验分布',
+    desc:'直接取提前期需求滚动和的经验分位点，不依赖任何分布' }
+];
+
+$('#methodBox').innerHTML = METHODS.map(m=>`
+  <label class="chk"><input type="checkbox" data-m="${m.id}" checked>
+  ${m.name}</label>`).join('');
+
+/* ==================================================================
+   3. 计算核心
+   ================================================================== */
+let LAST = null;
+let MANUAL_METHOD = 'auto';
+
+function compute(){
+  const dCol = $('#colDemand').value;
+  if(!dCol){ renderEmpty('请先选择「需求」列'); return; }
+
+  const raw = DATA.rows.map(r=>toNum(r[dCol]));
+  const d = raw.filter(v=>v!==null && isFinite(v));
+  if(d.length < 8){ renderEmpty('有效需求数据不足（至少 8 条）'); return; }
+
+  const n = d.length;
+  const dMean = mean(d), dVar = variance(d), dStd = Math.sqrt(dVar);
+  const cv = dMean!==0 ? dStd/Math.abs(dMean) : 0;
+  const g1 = skewness(d), g2 = exKurtosis(d);
+  const jb = n/6*(g1*g1 + g2*g2/4);
+  const jbP = Math.exp(-jb/2);
+
+  /* --- 提前期 --- */
+  const Lmean = Math.max(0.01, parseFloat($('#leadTime').value) || 7);
+  const lsd = parseFloat($('#leadStd').value);
+  const Lstd = (isFinite(lsd) && lsd >= 0) ? lsd : 0;
+
+  const muLT   = dMean * Lmean;
+  const varLT  = Lmean*dVar + dMean*dMean*Lstd*Lstd;
+  const sigmaLT= Math.sqrt(Math.max(varLT,1e-9));
+
+  /* 滚动窗口（长度 = 提前期天数） */
+  const Lw = Math.max(1, Math.round(Lmean));
+  let roll = [];
+  if(d.length >= Lw + 8){
+    for(let i=0;i+Lw<=d.length;i++){
+      let s=0; for(let j=0;j<Lw;j++) s+=d[i+j];
+      roll.push(s);
+    }
+  }
+  if(roll.length < 10) roll = d.map(v=>v*Lw);
+
+  /* --- 服务水平 --- */
+  const SL = readSL();
+  const alpha = 1 - SL;
+  const z = normInv(SL);
+
+  const useManualAlpha = $('#useManualAlpha').checked;
+  const manualAlphaPct = Math.max(0.1, Math.min(50, parseFloat($('#manualAlphaPct').value) || 5));
+  const alphaC = useManualAlpha ? manualAlphaPct/100 : alpha;
+  const kC = Math.sqrt(1/alphaC - 1);
+
+  const C = { d, n, dMean, dVar, dStd, cv, g1, g2,
+              Lmean, Lstd, muLT, sigmaLT, roll, SL, alpha, z, kC, alphaC,
+              useManualAlpha, manualAlphaPct };
+
+  const R = {};
+  const pctSL = (SL*100).toFixed(2).replace(/\.?0+$/,'') + '%';
+
+  /* ① 正态分布经典公式 */
+  R.normal = {
+    q : muLT + z*sigmaLT,
+    formula : `z(${pctSL}) = ${z.toFixed(3)}；SS = z·σ_LT = ${z.toFixed(3)} × ${fmt(sigmaLT)} = ${fmt(z*sigmaLT)}`,
+    note : `有货概率 ${pctSL}，缺货概率 ${(alpha*100).toFixed(2)}%`
+  };
+
+  /* ② 切比雪夫单边不等式（坎泰利） */
+  R.cantelli = {
+    q : muLT + kC*sigmaLT,
+    formula : `缺货概率 α = ${(alphaC*100).toFixed(2)}% → k = √(1/α − 1) = √(${(1/alphaC).toFixed(2)} − 1) = ${kC.toFixed(3)}；SS = k·σ_LT = ${fmt(kC*sigmaLT)}`,
+    note : `不依赖分布假设，只用到均值与方差；有货概率约 ${((1-alphaC)*100).toFixed(2)}%`
+  };
+
+  /* ③ 历史分位法 */
+  const qh = quantile(roll, SL);
+  R.histq = {
+    q : qh,
+    formula : `取提前期需求滚动和的经验 ${pctSL} 分位点 = ${fmt(qh)}`,
+    note : `基于 ${roll.length} 个长度 ${Lw} 天的滚动窗口；有货概率 ${pctSL}`
+  };
+
+  /* --- 分布识别：正态性 KS 检验 --- */
+  const ksD = ksStat(d, x => normCdf(x, dMean, dStd || 1e-9));
+  const ksP = ksPval(ksD, n);
+
+  let rec, recWhy;
+  if(jbP > 0.05 || ksP > 0.05){
+    rec = 'normal';
+    recWhy = `Jarque–Bera p = ${jbP.toFixed(3)}、KS p = ${ksP.toFixed(3)}，不能拒绝正态假设，推荐「正态分布经典公式」`;
+  } else {
+    rec = 'histq';
+    recWhy = `Jarque–Bera p = ${jbP.toFixed(3)}、KS p = ${ksP.toFixed(3)}，拒绝正态假设（偏度 ${g1.toFixed(2)}，超额峰度 ${g2.toFixed(2)}），建议改用不依赖分布假设的「历史分位法」`;
+  }
+
+  const onHand   = parseFloat($('#onHand').value)||0;
+  const inTransit= parseFloat($('#inTransit').value)||0;
+  const available= onHand + inTransit;
+
+  LAST = { C, R, rec, recWhy, muLT, sigmaLT, SL, alpha, available, onHand, inTransit,
+           Lmean, Lstd, Lw, dMean, dStd, dVar, n, cv, g1, g2, jb, jbP, ksD, ksP,
+           alphaC, kC };
+
+  render();
+}
+
+/* ==================================================================
+   4. 分布图绘制（直方图 + 正态拟合曲线）
+   ================================================================== */
+function drawDistributionChart(canvas, S){
+  if(!canvas) return;
+  const d = S.C.d;
+  const { dMean, dStd, cv } = S.C;
+
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const W = Math.max(340, rect.width || 600);
+  const H = Math.max(240, rect.height || 320);
+  canvas.width  = Math.round(W*dpr);
+  canvas.height = Math.round(H*dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+
+  let dmin = Math.min(...d), dmax = Math.max(...d);
+  const span0 = (dmax - dmin) || 1;
+  dmin -= span0*0.10;
+  dmax += span0*0.10;
+  if(dmin < 0 && Math.min(...d) >= 0) dmin = 0;
+
+  const nBins = Math.max(8, Math.min(30, Math.round(Math.sqrt(d.length)*1.7)));
+  const bw = (dmax - dmin) / nBins;
+  const counts = new Array(nBins).fill(0);
+  d.forEach(v=>{
+    let i = Math.floor((v - dmin)/bw);
+    if(i >= nBins) i = nBins-1;
+    if(i < 0) i = 0;
+    counts[i]++;
+  });
+  const maxCount = Math.max(...counts, 1);
+
+  const padL=54, padR=18, padT=48, padB=46;
+  const pw = W - padL - padR;
+  const ph = H - padT - padB;
+  const xPx = x => padL + (x - dmin)/(dmax - dmin) * pw;
+  const yPx = c => padT + ph - (c/maxCount) * ph;
+
+  ctx.fillStyle = '#0a1020';
+  ctx.fillRect(padL, padT, pw, ph);
+
+  /* 网格 */
+  ctx.strokeStyle = 'rgba(30,41,59,0.9)';
+  ctx.lineWidth = 1;
+  ctx.font = '11px -apple-system,BlinkMacSystemFont,sans-serif';
+  ctx.fillStyle = '#64748b';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for(let i=0;i<=4;i++){
+    const y = padT + ph*i/4;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL+pw, y); ctx.stroke();
+    ctx.fillText(Math.round(maxCount*(1-i/4)), padL-8, y);
+  }
+
+  /* 直方图 */
+  const barW = pw/nBins;
+  for(let i=0;i<nBins;i++){
+    const c = counts[i];
+    if(c === 0) continue;
+    const x = padL + i*barW;
+    const h = (c/maxCount)*ph;
+    const y = padT + ph - h;
+    const grad = ctx.createLinearGradient(0, y, 0, padT+ph);
+    grad.addColorStop(0, 'rgba(96,165,250,0.90)');
+    grad.addColorStop(1, 'rgba(37,99,235,0.15)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x+1, y, Math.max(1, barW-2), h);
+    ctx.strokeStyle = 'rgba(147,197,253,0.55)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x+1, y, Math.max(1, barW-2), h);
+  }
+
+  /* 正态拟合曲线 */
+  ctx.save();
+  ctx.setLineDash([7,5]);
+  ctx.lineWidth = 2.6;
+  ctx.strokeStyle = '#f59e0b';
+  ctx.shadowColor = 'rgba(245,158,11,0.55)';
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  let started = false;
+  const sd = dStd || 1e-9;
+  for(let i=0;i<=260;i++){
+    const xv = dmin + (dmax - dmin)*i/260;
+    const dens = normPdf(xv, dMean, sd);
+    const yc = dens * d.length * bw;
+    const px = xPx(xv), py = yPx(Math.min(yc, maxCount*1.15));
+    if(!started){ ctx.moveTo(px, py); started = true; }
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  /* 标题 */
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#e2e8f0';
+  ctx.font = '600 13.5px -apple-system,BlinkMacSystemFont,sans-serif';
+  ctx.fillText('历史需求分布 与 正态拟合曲线', padL, 22);
+  ctx.font = '11.5px -apple-system,BlinkMacSystemFont,sans-serif';
+  ctx.fillStyle = '#8a99ad';
+  ctx.fillText(`KS D = ${S.ksD.toFixed(4)}   ·   样本 n = ${d.length}   ·   日需求 CV = ${cv.toFixed(3)}`, padL, 40);
+
+  /* X 轴刻度 */
+  ctx.fillStyle = '#64748b';
+  ctx.font = '11px -apple-system,BlinkMacSystemFont,sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for(let i=0;i<=5;i++){
+    const xv = dmin + (dmax - dmin)*i/5;
+    ctx.fillText(xv.toFixed(0), xPx(xv), padT + ph + 10);
+  }
+  ctx.fillStyle = '#8a99ad';
+  ctx.font = '11.5px -apple-system,BlinkMacSystemFont,sans-serif';
+  ctx.fillText('历史需求值', padL + pw/2, padT + ph + 30);
+
+  /* ====== UI 绑定：在 Canvas 中注入作者水印 ====== */
+  ctx.save();
+  ctx.font = 'bold 20px "Microsoft YaHei", sans-serif';
+  ctx.fillStyle = 'rgba(148, 163, 184, 0.08)'; // 非常淡的灰色
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.translate(W / 2, padT + ph / 2);
+  ctx.rotate(-Math.PI / 12); // 旋转一定角度
+  ctx.fillText('林梦龙', 0, 0);
+  ctx.restore();
+  // ===============================================
+}
+
+/* ==================================================================
+   5. 渲染
+   ================================================================== */
+function renderEmpty(msg){
+  $('#out').innerHTML = `<div class="card"><div class="empty">${msg}</div></div>`;
+}
+
+function render(){
+  const S = LAST; if(!S) return;
+  const { R, rec, recWhy, muLT, sigmaLT, SL, available } = S;
+
+  const active = METHODS.filter(m => {
+    const cb = document.querySelector(`input[data-m="${m.id}"]`);
+    return cb && cb.checked;
+  });
+
+  const diagRows = [
+    ['样本量 n', S.n, ''],
+    ['日均需求 μ', fmt(S.dMean), ''],
+    ['日需求标准差 σ', fmt(S.dStd), ''],
+    ['变异系数 CV', S.cv.toFixed(3), S.cv<0.3?'低波动':S.cv<0.8?'中等波动':'高波动'],
+    ['偏度 γ₁', S.g1.toFixed(3), Math.abs(S.g1)<0.5?'近似对称':S.g1>0?'右偏':'左偏'],
+    ['超额峰度 γ₂', S.g2.toFixed(3), S.g2>1?'尖峰厚尾':'接近正态'],
+    ['Jarque–Bera 统计量', S.jb.toFixed(2), `p = ${S.jbP.toFixed(4)} ${S.jbP>0.05?'（不拒绝正态）':'（拒绝正态）'}`],
+    ['正态性 KS 统计量 D', S.ksD.toFixed(4), `p = ${S.ksP.toFixed(4)} ${S.ksP>0.05?'（不拒绝正态）':'（拒绝正态）'}`],
+    ['平均提前期 L', fmt(S.Lmean,2)+' 天', S.Lstd>0?`σ_L = ${fmt(S.Lstd,2)} 天（手动/数据）`:'视为固定提前期'],
+    ['提前期需求 μ_LT', fmt(muLT), '= μ × L'],
+    ['提前期需求 σ_LT', fmt(sigmaLT), '= √(L·σ² + μ²·σ_L²)']
+  ];
+
+  const recName = { normal:'正态分布经典公式', histq:'历史分位法', cantelli:'切比雪夫单边不等式' }[rec];
+
+  const resRows = active.map(m=>{
+    const r = R[m.id]; if(!r) return '';
+    const ss = r.q - muLT;
+    const rop = muLT + ss;
+    const isRec = (rec === m.id);
+    const isManualPick = (MANUAL_METHOD === m.id);
+    return `<tr style="${isManualPick?'background:rgba(59,130,246,.10)':''}">
+      <td><b>${m.name}</b> ${isRec?'<span class="pill ok">推荐</span>':''}${isManualPick?' <span class="pill purple">补货采用</span>':''}
+        <div class="small">${m.desc}</div></td>
+      <td><span class="pill info">${m.tag}</span></td>
+      <td class="n">${fmt(ss)}</td>
+      <td class="n">${fmt(rop)}</td>
+      <td class="small">${r.formula}${r.note?'<br>'+r.note:''}</td>
+    </tr>`;
+  }).join('');
+
+  const chosenId = (MANUAL_METHOD !== 'auto' && R[MANUAL_METHOD]) ? MANUAL_METHOD : rec;
+  const chosenR  = R[chosenId] || R.normal;
+  const chosenMethod = METHODS.find(m=>m.id===chosenId) || METHODS[0];
+  const chosenSS  = chosenR.q - muLT;
+  const chosenROP = muLT + chosenSS;
+  const chosenGap = chosenROP - available;
+  const isAutoChoice = (MANUAL_METHOD === 'auto');
+
+  const pctSL = (SL*100).toFixed(2).replace(/\.?0+$/,'') + '%';
+  const pctAlpha = ((1-SL)*100).toFixed(2).replace(/\.?0+$/,'') + '%';
+
+  $('#out').innerHTML = `
+    <div class="card">
+      <h2><span class="dot"></span>① 需求分布诊断 · 图示</h2>
+
+      <div class="banner" style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
+        <div>
+          <div class="t">识别结果：${recName} 更合适</div>
+          <div class="s">${recWhy}</div>
+        </div>
+        <div class="chart-badge">📈 推荐方法：${recName}</div>
+      </div>
+
+      <div class="chart-wrap">
+        <canvas id="distChart"></canvas>
+      </div>
+      <div class="chart-legend">
+        <div class="item"><span class="sw bar"></span>历史需求分布（直方图）</div>
+        <div class="item"><span class="sw"></span>正态拟合曲线（虚线）</div>
+        <div class="item" style="color:#8a99ad">曲线越贴合直方图轮廓，说明需求越接近正态</div>
+      </div>
+
+      <div class="grid" style="margin-bottom:16px">
+        <div class="kpi"><div class="k">样本量</div><div class="v">${S.n}</div></div>
+        <div class="kpi"><div class="k">日均需求</div><div class="v">${fmt(S.dMean,1)}</div></div>
+        <div class="kpi"><div class="k">日需求 σ</div><div class="v">${fmt(S.dStd,1)}</div></div>
+        <div class="kpi"><div class="k">变异系数 CV</div><div class="v">${S.cv.toFixed(2)}</div></div>
+        <div class="kpi"><div class="k">偏度 γ₁</div><div class="v">${S.g1.toFixed(2)}</div></div>
+        <div class="kpi"><div class="k">超额峰度 γ₂</div><div class="v">${S.g2.toFixed(2)}</div></div>
+      </div>
+
+      <table>
+        <thead><tr><th style="width:170px">指标</th><th style="width:190px">取值</th><th>说明</th></tr></thead>
+        <tbody>${diagRows.map(r=>`<tr><td>${r[0]}</td><td class="n" style="text-align:left">${r[1]}</td><td class="small">${r[2]}</td></tr>`).join('')}</tbody>
+      </table>
+      <div class="legend">
+        <code>p &gt; 0.05</code> 表示在 5% 显著性水平下不能拒绝正态假设，可放心使用正态分布经典公式；
+        否则建议改用不依赖分布假设的历史分位法。
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot"></span>② 安全库存计算结果（有货概率 ${pctSL} ／ 缺货概率 ${pctAlpha}）</h2>
+      <table>
+        <thead><tr>
+          <th>计算方法</th><th style="width:92px">适用</th>
+          <th style="width:110px">安全库存 SS</th>
+          <th style="width:110px">再订货点 ROP</th>
+          <th>公式与参数</th>
+        </tr></thead>
+        <tbody>${resRows || '<tr><td colspan="5" class="small">请勾选至少一种方法</td></tr>'}</tbody>
+      </table>
+      <div class="legend">
+        <b>ROP</b> = 提前期期望需求 μ_LT (${fmt(muLT)}) + 安全库存 SS。三种方法均使用同一有货概率 ${pctSL}，便于横向比较。<br>
+        切比雪夫单边不等式当前使用缺货概率 α = <b>${(S.alphaC*100).toFixed(2)}%</b>（k = ${S.kC.toFixed(3)}），
+        ${S.C.useManualAlpha ? '来自手动指定' : '来自左侧服务水平'}。
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot"></span>③ 补货建议</h2>
+
+      <div class="picker">
+        <span class="plab">🔧 计算方法选择</span>
+        <select id="manualMethodSelect">
+          <option value="auto" ${isAutoChoice?'selected':''}>自动（推荐：${recName}）</option>
+          ${METHODS.map(m=>`<option value="${m.id}" ${MANUAL_METHOD===m.id?'selected':''}>${m.name}（${m.tag}）</option>`).join('')}
+        </select>
+        <span class="cur">当前：<b style="color:#60a5fa">${chosenMethod.name}</b>${isAutoChoice?'（自动推荐）':'（手动选择）'}</span>
+      </div>
+
+      <div class="adv">
+        <div class="box">
+          <div class="lab">当前方法</div>
+          <div class="val" style="font-size:14.5px">${chosenMethod.name}</div>
+        </div>
+        <div class="box"><div class="lab">安全库存 SS</div><div class="val">${fmt(chosenSS)}</div></div>
+        <div class="box"><div class="lab">再订货点 ROP</div><div class="val">${fmt(chosenROP)}</div></div>
+        <div class="box"><div class="lab">可用库存（现有+在途）</div><div class="val">${fmt(available)}</div></div>
+        <div class="box" style="border-color:${chosenGap>0?'rgba(239,68,68,.4)':'rgba(16,185,129,.4)'}">
+          <div class="lab">建议补货量</div>
+          <div class="val" style="color:${chosenGap>0?'var(--bad)':'var(--ok)'}">${fmt(Math.max(0,chosenGap))}</div>
+        </div>
+      </div>
+
+      <div class="legend" style="margin-top:14px">
+        ${isAutoChoice
+          ? `当前采用自动识别的推荐方法 <b>${recName}</b>。如需对比其他算法，可在上方下拉框中手动切换。`
+          : `当前手动选择 <b>${chosenMethod.name}</b>（${chosenMethod.tag}），推荐方法仍为 ${recName}。`}
+        <br>
+        ${chosenGap>0
+          ? `当前库存位置低于再订货点 <b>${fmt(chosenGap)}</b> 个单位，建议尽快补货，以在 ${pctSL} 的服务水平下覆盖 ${fmt(S.Lmean,1)} 天的提前期需求。`
+          : `当前可用库存已高于再订货点 <b>${fmt(-chosenGap)}</b> 个单位，暂无需补货。`}
+      </div>
+
+      <div class="legend" style="margin-top:10px;border-top:1px dashed rgba(255,255,255,.08);padding-top:12px">
+        <b style="color:#93c5fd">方法说明：</b>${chosenMethod.desc}
+        <br>${chosenR.formula}${chosenR.note?'<br>'+chosenR.note:''}
+      </div>
+    </div>
+  `;
+
+  requestAnimationFrame(()=>{
+    const cv = document.getElementById('distChart');
+    if(cv) drawDistributionChart(cv, S);
+  });
+}
+
+let _rzTimer = null;
+window.addEventListener('resize', ()=>{
+  clearTimeout(_rzTimer);
+  _rzTimer = setTimeout(()=>{
+    const cv = document.getElementById('distChart');
+    if(cv && LAST) drawDistributionChart(cv, LAST);
+  }, 160);
+});
+
+/* ==================================================================
+   6. 示例数据 & 事件绑定
+   ================================================================== */
+$('#demoBtn').addEventListener('click', ()=>{
+  const rows = [];
+  const N = 150;
+  for(let i=0;i<N;i++){
+    let u1=Math.random(), u2=Math.random();
+    let z = Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);
+    let v = 120 + 34*z + 6*(z*z-1);
+    v = Math.max(0, Math.round(v*10)/10);
+    rows.push({
+      '日期': `2024-${String(Math.floor(i/30)+1).padStart(2,'0')}-${String(i%30+1).padStart(2,'0')}`,
+      '历史需求': v,
+      '在途库存': i===N-1 ? 260 : 0,
+      '现有库存': i===N-1 ? 340 : 0,
+      '提前期(天)': Math.max(3, Math.round((7 + 1.2*(Math.random()*2-1))*10)/10)
+    });
+  }
+  setData(rows);
+  $('#dropText').textContent = '✔ 已载入示例数据（150 天）';
+});
+
+['#colDemand','#colTransit','#colOnhand','#colLead','#leadTime','#leadStd','#onHand','#inTransit','#manualAlphaPct']
+  .forEach(id => $(id).addEventListener('input', compute));
+
+/* 服务水平：input 时计算（不强制同步，避免打断输入），change/blur 时纠正范围 */
+$('#sl').addEventListener('input', compute);
+$('#sl').addEventListener('change', ()=>{ syncSLInput(); compute(); });
+$('#sl').addEventListener('blur',  ()=>{ syncSLInput(); compute(); });
+
+$('#colDemand').addEventListener('change', compute);
+$('#colTransit').addEventListener('change', compute);
+$('#colOnhand').addEventListener('change', compute);
+$('#colLead').addEventListener('change', ()=>{
+  const c = $('#colLead').value;
+  if(c){
+    const a = DATA.rows.map(r=>toNum(r[c])).filter(v=>v!==null&&v>0);
+    if(a.length>=3){
+      $('#leadTime').value = +mean(a).toFixed(2);
+      $('#leadStd').value  = +Math.sqrt(variance(a)).toFixed(3);
+    } else if(a.length){
+      $('#leadTime').value = +mean(a).toFixed(2);
+    }
+  }
+  compute();
+});
+$('#useManualAlpha').addEventListener('change', e=>{
+  $('#manualAlphaPct').disabled = !e.target.checked;
+  if(e.target.checked){
+    const cur = parseFloat($('#manualAlphaPct').value);
+    if(!cur || cur<=0 || cur>50){
+      const slPct = Math.max(50, Math.min(99.99, parseFloat($('#sl').value) || 95));
+      $('#manualAlphaPct').value = (100 - slPct).toFixed(2);
+    }
+  }
+  compute();
+});
+$('#calcBtn').addEventListener('click', ()=>{ syncSLInput(); compute(); });
+$('#methodBox').addEventListener('change', render);
+
+/* 补货建议：手动选择计算方法 */
+document.addEventListener('change', e=>{
+  if(e.target && e.target.id === 'manualMethodSelect'){
+    MANUAL_METHOD = e.target.value;
+    render();
+  }
+});
+</script>
+</body>
+</html>
