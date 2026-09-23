@@ -286,60 +286,18 @@
     color: #f59e0b;
     font-weight: bold;
   }
-
-  /* ===== HITS 访问统计徽章 ===== */
-  .visit-counter{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    flex-wrap:wrap;
-    margin:10px 0 14px;
-    padding:8px 10px;
-    background:var(--card-inner);
-    border:1px solid var(--line);
-    border-radius:8px;
-  }
-  .visit-counter .visit-label{
-    font-size:12px;
-    color:var(--mut);
-    flex:none;
-  }
-  .visit-counter img{
-    display:block;
-    height:20px;
-    border-radius:4px;
-  }
-  .visit-counter .visit-history{
-    font-size:12px;
-    color:#60a5fa;
-    text-decoration:none;
-    border-bottom:1px dashed rgba(96,165,250,.5);
-    transition:.15s;
-  }
-  .visit-counter .visit-history:hover{
-    color:#93c5fd;
-    border-bottom-color:#93c5fd;
-  }
 </style>
 </head>
 <body>
 <div class="wrap">
 
+<img src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgaryzeng-7.github.io%2FForecasting-Linmenglong-%2FStock.html&label=&icon=123&color=%23cfe2ff&message=&style=flat&tz=UTC">
+Tracking 235403 URLs & 62386549 Hits
+
   <!-- ==================== 左侧 ==================== -->
   <aside>
     <div class="card">
       <div class="brand">📦 安全库存智能计算器 By 林梦龙</div>
-
-      <!-- ===== HITS 访问统计徽章 ===== -->
-      <div class="visit-counter">
-        <span class="visit-label">访问量</span>
-        <a id="hits-stats-link-stock" href="https://github.com/GaryZeng-7/Forecasting-Linmenglong-/Stock.html" target="_blank" rel="noopener noreferrer" title="查看最近6个月访问趋势">
-          <img id="hits-badge-stock" src="" alt="访问量统计">
-        </a>
-        <a id="hits-history-stock" class="visit-history" href="https://hits.seeyoufarm.com/" target="_blank" rel="noopener noreferrer">📈 最近6个月</a>
-      </div>
-      <!-- ============================== -->
-
       <p class="hint">导入历史需求 / 在途库存 / 现有库存 / 提前期数据，自动识别需求分布，并对比三种常用安全库存算法。</p>
       <label class="drop" id="drop">
         <input type="file" id="file" accept=".xlsx,.xls,.csv" hidden>
@@ -1129,38 +1087,6 @@ document.addEventListener('change', e=>{
     render();
   }
 });
-</script>
-
-<!-- ===== HITS 访问统计：今日/总量徽章 + 最近6个月历史图表入口 ===== -->
-<script>
-(function () {
-  function initHitsStock() {
-    var pageUrl = encodeURIComponent(window.location.origin + window.location.pathname);
-    var badge = document.getElementById('hits-badge-stock');
-    var history = document.getElementById('hits-history-stock');
-    var statsLink = document.getElementById('hits-stats-link-stock');
-
-    if (badge) {
-      badge.src = 'https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=' +
-        pageUrl +
-        '&count_bg=%2379C83D&title_bg=%23555555&icon=github.svg&icon_color=%23E7E7E7&title=访问量&edge_flat=false';
-    }
-
-    if (history) {
-      history.href = 'https://hits.seeyoufarm.com/#url=' + pageUrl;
-    }
-
-    if (statsLink) {
-      statsLink.href = 'https://hits.seeyoufarm.com/#url=' + pageUrl;
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initHitsStock);
-  } else {
-    initHitsStock();
-  }
-})();
 </script>
 </body>
 </html>
