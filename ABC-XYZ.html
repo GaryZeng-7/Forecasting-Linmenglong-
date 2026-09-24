@@ -441,8 +441,12 @@
                 alert('没有可导出的数据，请先进行分析');
                 return;
             }
+            const priceCol = document.getElementById('map_price').value;
             
-            let headers = ['SKU', '总价', '变异系数', 'ABC', 'XYZ', '单价细分'];
+            let headers = ['SKU', '总价', '变异系数', 'ABC', 'XYZ'];
+            if (priceCol) headers.push('单价'); // 若选择了单价列，导出时也包含
+            headers.push('单价细分');
+            
             const rows = [headers.join(',')];
             results.forEach(d => {
                 let cells = [
@@ -450,9 +454,13 @@
                     d.value.toFixed(2),
                     d.cv.toFixed(3),
                     d.abc,
-                    d.xyz,
-                    d.priceSegment || d.abc
+                    d.xyz
                 ];
+                if (priceCol) {
+                    cells.push(d.price !== null && !isNaN(d.price) ? d.price.toFixed(2) : '');
+                }
+                cells.push(d.priceSegment || d.abc);
+                
                 const escaped = cells.map(c => {
                     const s = String(c);
                     if (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')) {
@@ -488,21 +496,21 @@
 
         // ==================== 示例数据 ====================
         const SAMPLE_DATA = [
-            { 物料: 'A', 总价: 210, 第1期: 100, 第2期: 105, 第3期: 98, 第4期: 102, 第5期: 110, 第6期: 108 },
-            { 物料: 'B', 总价: 160, 第1期: 80, 第2期: 82, 第3期: 78, 第4期: 85, 第5期: 88, 第6期: 90 },
-            { 物料: 'C', 总价: 120, 第1期: 60, 第2期: 65, 第3期: 62, 第4期: 58, 第5期: 70, 第6期: 72 },
-            { 物料: 'D', 总价: 85,  第1期: 45, 第2期: 50, 第3期: 48, 第4期: 52, 第5期: 55, 第6期: 60 },
-            { 物料: 'E', 总价: 70,  第1期: 30, 第2期: 32, 第3期: 35, 第4期: 33, 第5期: 38, 第6期: 40 },
-            { 物料: 'F', 总价: 55,  第1期: 20, 第2期: 25, 第3期: 22, 第4期: 28, 第5期: 30, 第6期: 35 },
-            { 物料: 'G', 总价: 48,  第1期: 15, 第2期: 18, 第3期: 20, 第4期: 22, 第5期: 25, 第6期: 28 },
-            { 物料: 'H', 总价: 40,  第1期: 12, 第2期: 14, 第3期: 15, 第4期: 18, 第5期: 20, 第6期: 22 },
-            { 物料: 'I', 总价: 32,  第1期: 8, 第2期: 9, 第3期: 10, 第4期: 12, 第5期: 14, 第6期: 15 },
-            { 物料: 'J', 总价: 28,  第1期: 6, 第2期: 7, 第3期: 8, 第4期: 9, 第5期: 10, 第6期: 12 },
-            { 物料: 'K', 总价: 20,  第1期: 4, 第2期: 5, 第3期: 6, 第4期: 7, 第5期: 8, 第6期: 9 },
-            { 物料: 'L', 总价: 15,  第1期: 3, 第2期: 4, 第3期: 5, 第4期: 6, 第5期: 7, 第6期: 8 },
-            { 物料: 'M', 总价: 10,  第1期: 2, 第2期: 3, 第3期: 4, 第4期: 5, 第5期: 6, 第6期: 8 },
-            { 物料: 'N', 总价: 6,   第1期: 1, 第2期: 2, 第3期: 3, 第4期: 4, 第5期: 6, 第6期: 9 },
-            { 物料: 'O', 总价: 4,   第1期: 1, 第2期: 1, 第3期: 2, 第4期: 3, 第5期: 5, 第6期: 8 }
+            { 物料: 'A', 总价: 210, 单价: 15.0, 第1期: 100, 第2期: 105, 第3期: 98, 第4期: 102, 第5期: 110, 第6期: 108 },
+            { 物料: 'B', 总价: 160, 单价: 12.5, 第1期: 80, 第2期: 82, 第3期: 78, 第4期: 85, 第5期: 88, 第6期: 90 },
+            { 物料: 'C', 总价: 120, 单价: 10.0, 第1期: 60, 第2期: 65, 第3期: 62, 第4期: 58, 第5期: 70, 第6期: 72 },
+            { 物料: 'D', 总价: 85,  单价: 8.5,  第1期: 45, 第2期: 50, 第3期: 48, 第4期: 52, 第5期: 55, 第6期: 60 },
+            { 物料: 'E', 总价: 70,  单价: 7.0,  第1期: 30, 第2期: 32, 第3期: 35, 第4期: 33, 第5期: 38, 第6期: 40 },
+            { 物料: 'F', 总价: 55,  单价: 5.5,  第1期: 20, 第2期: 25, 第3期: 22, 第4期: 28, 第5期: 30, 第6期: 35 },
+            { 物料: 'G', 总价: 48,  单价: 4.8,  第1期: 15, 第2期: 18, 第3期: 20, 第4期: 22, 第5期: 25, 第6期: 28 },
+            { 物料: 'H', 总价: 40,  单价: 4.0,  第1期: 12, 第2期: 14, 第3期: 15, 第4期: 18, 第5期: 20, 第6期: 22 },
+            { 物料: 'I', 总价: 32,  单价: 3.2,  第1期: 8, 第2期: 9, 第3期: 10, 第4期: 12, 第5期: 14, 第6期: 15 },
+            { 物料: 'J', 总价: 28,  单价: 2.8,  第1期: 6, 第2期: 7, 第3期: 8, 第4期: 9, 第5期: 10, 第6期: 12 },
+            { 物料: 'K', 总价: 20,  单价: 2.0,  第1期: 4, 第2期: 5, 第3期: 6, 第4期: 7, 第5期: 8, 第6期: 9 },
+            { 物料: 'L', 总价: 15,  单价: 1.5,  第1期: 3, 第2期: 4, 第3期: 5, 第4期: 6, 第5期: 7, 第6期: 8 },
+            { 物料: 'M', 总价: 10,  单价: 1.0,  第1期: 2, 第2期: 3, 第3期: 4, 第4期: 5, 第5期: 6, 第6期: 8 },
+            { 物料: 'N', 总价: 6,   单价: 0.6,  第1期: 1, 第2期: 2, 第3期: 3, 第4期: 4, 第5期: 6, 第6期: 9 },
+            { 物料: 'O', 总价: 4,   单价: 0.4,  第1期: 1, 第2期: 1, 第3期: 2, 第4期: 3, 第5期: 5, 第6期: 8 }
         ];
 
         // ==================== 文件上传 ====================
@@ -529,11 +537,12 @@
 
         // ==================== 加载示例数据 ====================
         document.getElementById('loadSampleBtn').addEventListener('click', function() {
-            columns = ['物料', '总价', '第1期', '第2期', '第3期', '第4期', '第5期', '第6期'];
+            columns = ['物料', '总价', '单价', '第1期', '第2期', '第3期', '第4期', '第5期', '第6期'];
             rawData = SAMPLE_DATA.map(item => ({ ...item }));
             renderColumnMapping();
             document.getElementById('map_sku').value = '物料';
             document.getElementById('map_value').value = '总价';
+            document.getElementById('map_price').value = '单价'; // 自动选择单价
             document.getElementById('calcPeriod').value = 6;
             document.getElementById('calcPeriodVal').innerText = 6;
             analyzeBtn.click();
@@ -690,7 +699,7 @@
             results = data;
             renderMetrics(data);
             renderGrid(data);
-            renderTable(data);
+            renderTable(data, priceCol); // 传入 priceCol 以便表格动态显示单价列
             document.getElementById('xyzCompareResult').innerHTML = '';
         });
 
@@ -801,17 +810,36 @@
             gridDiv.setAttribute('data-lm-sig', '_0xLM_SIG_2024');
         }
 
-        // ==================== 渲染表格 ====================
-        function renderTable(data) {
+        // ==================== 渲染表格（动态显示单价列） ====================
+        function renderTable(data, priceCol) {
             const thead = document.querySelector('#resultTable thead');
             const tbody = document.querySelector('#resultTable tbody');
-            const headers = ['SKU', '总价', '变异系数', 'ABC', 'XYZ', '单价细分'];
+            
+            // 基础表头
+            let headers = ['SKU', '总价', '变异系数', 'ABC', 'XYZ'];
+            // 如果选择了单价列，则增加单价表头
+            if (priceCol) headers.push('单价');
+            // 单价细分表头始终保留
+            headers.push('单价细分');
+            
             thead.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+            
             let rows = '';
             data.forEach(d => {
-                const cells = [
-                    d.sku, d.value.toFixed(2), d.cv.toFixed(3), d.abc, d.xyz, d.priceSegment || d.abc
+                let cells = [
+                    d.sku, 
+                    d.value.toFixed(2), 
+                    d.cv.toFixed(3), 
+                    d.abc, 
+                    d.xyz
                 ];
+                // 如果选择了单价列，则填充单价数据
+                if (priceCol) {
+                    cells.push(d.price !== null && !isNaN(d.price) ? d.price.toFixed(2) : '-');
+                }
+                // 填充单价细分数据
+                cells.push(d.priceSegment || d.abc);
+                
                 rows += `<tr>${cells.map(c => `<td>${c}</td>`).join('')}</tr>`;
             });
             tbody.innerHTML = rows;
