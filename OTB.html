@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="lm-fingerprint" content="LM-SSC-4C4D-2024">
+<meta name="lm-author" content="林梦龙">
+<title>OTB 限额采购智能计算器 By 林梦龙</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+  :root{
+    --bg:#1a1230;
+    --panel:#251a42;
+    --panel2:#2e2055;
+    --panel3:#3a2a68;
+    --line:#4a2f80;
+    --line2:#6d3fbd;
+    --accent:#b975ff;
+    --accent2:#8b4de8;
+    --gold:#fcc94f;
+    --text:#faf5ff;
+    --muted:#d9c9f0;
+    --blue:#7cb3ff;
+    --ok:#4ed8a8;
+    --bad:#ff8a8a;
+    --cyan:#4de3f5;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:radial-gradient(1200px 700px at 15% -10%, #3a2565 0%, #1a1230 55%) fixed;
+    color:var(--text);
+    font-family:"PingFang SC","Microsoft YaHei","Segoe UI",system-ui,-apple-system,sans-serif;
+    font-size:15px;
+    padding:18px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    display:grid;
+    grid-template-columns:340px minmax(0,1fr);
+    gap:16px;
+    max-width:1560px;
+    margin:0 auto;
+    align-items:start;
+  }
+
+  /* ============ 左侧栏（蓝色独立配色） ============ */
+  .side{
+    background:linear-gradient(180deg,#0f2848 0%, #0a1c33 100%);
+    border:1px solid #1e4a80;
+    border-radius:12px;
+    padding:16px;
+    position:sticky;
+    top:18px;
+  }
+  .brand{display:flex;align-items:center;gap:9px;margin-bottom:10px;}
+  .brand-icon{
+    width:28px;height:28px;border-radius:8px;
+    background:linear-gradient(135deg,#1d4ed8,#60a5fa);
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;flex:none;
+    box-shadow:0 0 14px rgba(96,165,250,.6);
+  }
+  .brand h1{
+    font-size:15px;margin:0;font-weight:700;letter-spacing:.2px;
+    background:linear-gradient(90deg,#ffffff,#bfdbfe);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .brand .by{font-size:12px;font-weight:400;color:#7fa7d1;-webkit-text-fill-color:#7fa7d1;}
+
+  .auth-badge{
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:11px;color:#bfdbfe;
+    background:rgba(96,165,250,.14);
+    border:1px solid rgba(96,165,250,.5);
+    border-radius:20px;padding:3px 10px;margin-bottom:12px;
+  }
+  .auth-badge::before{content:"🛡";font-size:10px;}
+
+  .sec-title{
+    font-size:12px;color:#c7ddff;letter-spacing:1px;
+    margin:0 0 10px;display:flex;align-items:center;gap:6px;
+  }
+  .sec-title::before{
+    content:"";width:3px;height:12px;border-radius:2px;
+    background:linear-gradient(180deg,#60a5fa,#1d4ed8);
+  }
+
+  .field{margin-bottom:11px;}
+  .field label{
+    display:block;font-size:13px;color:#bfdbfe;margin-bottom:5px;
+  }
+  .field .hint{float:right;color:#5b7fa6;font-size:11px;}
+  .field .hint.act{color:#60a5fa;}
+
+  .side input[type=number],
+  .side input[type=date],
+  .side input[type=month],
+  .side input[type=text],
+  .side select{
+    width:100%;
+    background:#061529;
+    border:1px solid #1e4a80;
+    border-radius:7px;
+    color:#e5efff;
+    padding:8px 10px;
+    font-size:14px;
+    outline:none;
+    font-family:inherit;
+    transition:border-color .15s, box-shadow .15s;
+    color-scheme:dark;
+  }
+  .side input[type=number]:focus,
+  .side input[type=date]:focus,
+  .side input[type=month]:focus,
+  .side input[type=text]:focus{
+    border-color:#60a5fa;
+    box-shadow:0 0 0 3px rgba(96,165,250,.22);
+  }
+  .side input[type=number]::-webkit-outer-spin-button,
+  .side input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+  .side input[type=number]{-moz-appearance:textfield;}
+  .side input[readonly]{
+    background:#04101f;
+    color:#bfdbfe;
+    cursor:default;
+  }
+
+  .side .btn{
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:1px solid #1d4ed8;
+    background:linear-gradient(180deg,#12315c,#0c2444);
+    color:#dbeafe;
+    font-size:14px;
+    font-family:inherit;
+    cursor:pointer;
+    transition:.15s;
+    letter-spacing:.5px;
+  }
+  .side .btn:hover{
+    border-color:#60a5fa;
+    box-shadow:0 0 16px rgba(96,165,250,.4);
+  }
+  .side .btn.primary{
+    background:linear-gradient(90deg,#1d4ed8,#3b82f6);
+    border-color:#93c5fd;
+    color:#fff;
+    font-weight:700;
+    box-shadow:0 4px 18px rgba(37,99,235,.55);
+  }
+  .side .btn.primary:hover{
+    box-shadow:0 4px 26px rgba(96,165,250,.8);
+  }
+  .side .btn.ghost{
+    background:transparent;
+    border-color:#1e4a80;
+    color:#bfdbfe;
+  }
+  .side .btn.ghost:hover{
+    border-color:#60a5fa;
+    color:#e5efff;
+    box-shadow:0 0 14px rgba(96,165,250,.35);
+  }
+
+  .btn{
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:1px solid var(--line2);
+    background:linear-gradient(180deg,#3a2565,#2c1a50);
+    color:#f3e8ff;
+    font-size:14px;
+    font-family:inherit;
+    cursor:pointer;
+    transition:.15s;
+    letter-spacing:.5px;
+  }
+  .btn:hover{border-color:var(--accent);box-shadow:0 0 16px rgba(185,117,255,.3);}
+  .btn.sm{
+    padding:6px 12px;font-size:13px;width:auto;
+  }
+  .btn.icon-btn{
+    width:auto;padding:3px 6px;font-size:12px;border-radius:6px;
+    background:linear-gradient(180deg,#3a2565,#2c1a50);
+    border:1px solid var(--line2);
+    color:#f3e8ff;
+  }
+  .btn.icon-btn:hover{border-color:var(--accent);}
+  .btn.danger{
+    border-color:#8f2a2a;color:#ffb4b4;background:rgba(143,42,42,.25);
+  }
+  .btn.danger:hover{border-color:#ef4444;box-shadow:0 0 12px rgba(239,68,68,.35);}
+
+  /* ============ 右侧主区 ============ */
+  .main{min-width:0;display:flex;flex-direction:column;gap:16px;}
+
+  #exportArea{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+
+  .promo{
+    background:linear-gradient(100deg,#3a1f66 0%, #4d2685 55%, #5a2b95 100%);
+    border:1px solid #c28a2e;
+    border-radius:12px;
+    padding:14px 18px;
+    box-shadow:0 0 0 1px rgba(252,201,79,.14), 0 8px 30px rgba(0,0,0,.3) inset;
+  }
+  .promo-line1{font-size:14px;color:#f3e8ff;margin-bottom:10px;}
+  .promo-name{color:var(--gold);font-weight:700;}
+  .promo-btns{display:flex;flex-wrap:wrap;align-items:center;gap:9px;}
+  .promo-btn{
+    font-size:13px;
+    color:#e3d3ff;
+    background:rgba(139,77,232,.28);
+    border:1px solid #7d4dd0;
+    border-radius:7px;
+    padding:5px 11px;
+    transition:.15s;
+    cursor:default;
+  }
+  .promo-btn:hover{background:rgba(139,77,232,.45);color:#f3ecff;}
+  .promo-btn.hl{
+    background:linear-gradient(90deg,rgba(252,201,79,.18),rgba(139,77,232,.28));
+    border-color:rgba(252,201,79,.6);
+    color:#ffe28a;
+  }
+  .promo-link{font-size:13px;color:#d9c9f0;}
+  .promo-ok{
+    margin-left:auto;font-size:13px;color:var(--gold);
+    background:rgba(252,201,79,.12);
+    border:1px solid rgba(252,201,79,.45);
+    border-radius:20px;padding:3px 12px;
+  }
+
+  .card{
+    background:linear-gradient(180deg,#2a1f4a 0%, #241a42 100%);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px 18px;
+  }
+  .card h2{
+    font-size:15px;margin:0 0 14px;
+    display:flex;align-items:center;gap:8px;
+    color:#f3e8ff;font-weight:600;
+  }
+  .card h2 .num{
+    width:22px;height:22px;border-radius:50%;
+    background:linear-gradient(135deg,#8b4de8,#b975ff);
+    color:#fff;font-size:12px;
+    display:inline-flex;align-items:center;justify-content:center;
+    flex:none;box-shadow:0 0 10px rgba(185,117,255,.5);
+  }
+  .card h2 .sub{font-size:12px;color:#b9a3d8;font-weight:400;}
+
+  #displayProductName {
+    flex: 1;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fcc94f;
+    letter-spacing: 0.5px;
+    margin-left: 0;
+  }
+
+  .card-actual{
+    background:linear-gradient(180deg,#1c3346 0%, #172a3a 100%);
+    border-color:#1f5a70;
+  }
+  .card-actual h2{color:#b3f1fb;}
+  .card-actual h2 .num{
+    background:linear-gradient(135deg,#0d9cb8,#2dd0e8);
+    box-shadow:0 0 10px rgba(77,227,245,.5);
+  }
+  .card-actual h2 .sub{color:#88bfce;}
+  .card-actual .table-wrap{border-color:#1d5466;}
+  .card-actual thead th{
+    background:linear-gradient(180deg,#194156,#143346);
+    color:#8ee5f7;
+    border-bottom-color:#1c6580;
+  }
+  .card-actual tbody td{
+    border-bottom-color:#1a3e50;
+    color:#d6eff8;
+  }
+  .card-actual tbody tr:hover td{background:rgba(77,227,245,.08);}
+  .card-actual tfoot .total-row td{
+    background:rgba(77,227,245,.1);
+    color:#8ee5f7;
+    border-top:1px solid rgba(77,227,245,.32);
+  }
+  .card-actual .num-otb{color:#4de3f5;}
+  .card-actual input.mini{
+    background:#122a38;
+    border-color:#1d5466;
+    color:#d6eff8;
+  }
+  .card-actual input.mini:focus{border-color:#4de3f5;box-shadow:0 0 0 3px rgba(77,227,245,.18);}
+
+  .highlight-box{
+    background:linear-gradient(90deg,rgba(139,77,232,.26),rgba(139,77,232,.08));
+    border-left:3px solid var(--accent);
+    border-radius:8px;
+    padding:12px 16px;
+    margin-bottom:14px;
+    font-size:14px;
+    line-height:1.8;
+  }
+  .highlight-box .big{color:var(--gold);font-weight:700;font-size:16px;}
+
+  .kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:10px;
+  }
+  .kpi{
+    background:#2c2152;
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:12px 14px;
+    position:relative;
+    overflow:hidden;
+  }
+  .kpi::after{
+    content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+    background:linear-gradient(180deg,#b975ff,#8b4de8);
+  }
+  .kpi-label{font-size:12px;color:#d9c9f0;display:block;margin-bottom:6px;}
+  .kpi-value{
+    font-size:20px;font-weight:700;color:#faf5ff;
+    font-variant-numeric:tabular-nums;letter-spacing:.3px;
+  }
+  .kpi-value.gold{color:var(--gold);}
+  .kpi-value.blue{color:var(--blue);}
+  .kpi-value.green{color:var(--ok);}
+  .kpi-unit{font-size:12px;color:#b9a3d8;margin-left:3px;font-weight:400;}
+
+  .table-wrap{
+    overflow-x:auto;
+    border-radius:9px;
+    border:1px solid var(--line);
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12px;
+    min-width:980px;
+    table-layout:fixed;
+  }
+  thead th{
+    background:linear-gradient(180deg,#3a2565,#2f1c55);
+    color:#e3d3ff;
+    font-weight:600;
+    padding:8px 5px;
+    text-align:right;
+    border-bottom:1px solid var(--line2);
+    white-space:nowrap;
+    font-size:12px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  thead th:first-child{text-align:left;}
+  tbody td{
+    padding:7px 5px;
+    text-align:right;
+    border-bottom:1px solid #382a5e;
+    font-variant-numeric:tabular-nums;
+    color:#eadffc;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    font-size:12px;
+  }
+  tbody td:first-child{text-align:left;}
+
+  tfoot td{
+    padding:7px 5px;
+    text-align:right;
+    font-variant-numeric:tabular-nums;
+    color:#eadffc;
+    white-space:nowrap;
+    font-size:12px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover td{background:rgba(139,77,232,.12);}
+
+  tr.total-row td{
+    background:rgba(252,201,79,.09);
+    color:var(--gold);
+    font-weight:700;
+    border-top:1px solid rgba(252,201,79,.32);
+    text-align:right;
+  }
+
+  .glow-warning {
+    color: #ff9a9a !important;
+    text-shadow: 0 0 8px rgba(255,138,138,0.9), 0 0 16px rgba(255,138,138,0.5);
+    animation: pulse-glow 1.2s ease-in-out infinite alternate;
+    cursor: help;
+  }
+  @keyframes pulse-glow {
+    from { text-shadow: 0 0 6px rgba(255,138,138,0.6), 0 0 12px rgba(255,138,138,0.4); }
+    to   { text-shadow: 0 0 10px rgba(255,138,138,1), 0 0 22px rgba(255,138,138,0.85); }
+  }
+
+  input.mini{
+    width:58px;
+    padding:4px 4px;
+    font-size:12px;
+    text-align:right;
+    background:#1f1638;
+    border:1px solid var(--line);
+    border-radius:5px;
+    color:#faf5ff;
+    outline:none;
+    font-family:inherit;
+    font-variant-numeric:tabular-nums;
+  }
+  input.mini.wide{width:76px;}
+  input.mini-month{
+    width:86px;
+    padding:3px 4px;
+    font-size:12px;
+    background:#1f1638;
+    border:1px solid var(--line);
+    border-radius:5px;
+    color:#faf5ff;
+    outline:none;
+    font-family:inherit;
+    color-scheme:dark;
+  }
+  input.mini-month:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(185,117,255,.18);}
+  .num-otb{color:var(--gold);font-weight:700;}
+  .num-neg{color:var(--bad);}
+
+  td.cell-purchase{
+    white-space:nowrap;
+  }
+
+  .rate-sum-bar{
+    display:flex;align-items:center;gap:10px;
+    margin-bottom:12px;
+    padding:10px 14px;
+    border-radius:9px;
+    background:rgba(139,77,232,.12);
+    border:1px solid var(--line);
+    font-size:13px;
+  }
+  .rate-sum-bar .lbl{color:#d9c9f0;}
+  .rate-sum-val{
+    font-size:17px;font-weight:700;color:#faf5ff;
+    font-variant-numeric:tabular-nums;
+  }
+  .rate-hint{
+    margin-left:auto;font-size:13px;padding:3px 12px;border-radius:20px;
+  }
+  .rate-hint.ok{color:#4ed8a8;background:rgba(78,216,168,.12);border:1px solid rgba(78,216,168,.42);}
+  .rate-hint.bad{color:#ff8a8a;background:rgba(255,138,138,.12);border:1px solid rgba(255,138,138,.45);}
+
+  .note{
+    margin-top:14px;
+    font-size:12px;
+    color:#b9a3d8;
+    line-height:1.9;
+    background:rgba(139,77,232,.08);
+    border:1px dashed var(--line);
+    border-radius:8px;
+    padding:11px 14px;
+  }
+  .note b{color:#e3d3ff;font-weight:600;}
+  .note code{
+    color:#ffe28a;font-family:ui-monospace,Consolas,monospace;
+    background:rgba(252,201,79,.1);padding:1px 5px;border-radius:4px;
+  }
+
+  .progress-wrap{
+    display:flex;align-items:center;gap:6px;justify-content:flex-end;
+  }
+  .progress{
+    width:50px;height:6px;border-radius:3px;
+    background:rgba(255,255,255,.1);
+    overflow:hidden;flex:none;
+  }
+  .progress-bar{
+    height:100%;border-radius:3px;
+    background:linear-gradient(90deg,#b975ff,#4de3f5);
+    transition:width .3s;
+  }
+  .progress-bar.green{background:linear-gradient(90deg,#4ed8a8,#4de3f5);}
+  .progress-bar.gold{background:linear-gradient(90deg,#fcc94f,#f5a623);}
+  .progress-text{
+    font-size:11px;color:#d9c9f0;min-width:34px;text-align:right;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .export-bar{
+    display:flex;gap:10px;margin-top:12px;
+  }
+  .export-bar .btn{flex:1;}
+
+  .toolbar{
+    display:flex;gap:10px;margin-bottom:12px;
+  }
+
+  .charts-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-top:16px;
+  }
+  .chart-box{
+    background:#2c2152;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 14px;
+    position:relative;
+  }
+  .chart-box-title{
+    font-size:13px;color:#e3d3ff;font-weight:600;margin-bottom:10px;
+    display:flex;align-items:center;gap:6px;
+  }
+  .chart-box-title::before{
+    content:"";width:3px;height:12px;border-radius:2px;
+    background:linear-gradient(180deg,#b975ff,#4de3f5);
+  }
+  .chart-canvas-wrap{
+    height:200px;position:relative;
+  }
+  .chart-pct{
+    text-align:center;
+    margin-top:10px;
+    font-size:14px;
+    font-weight:700;
+    letter-spacing:.3px;
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* ============ 页脚声明（导出图片时可见） ============ */
+  .lm-footer {
+    margin-top: 8px;
+    background: #000000;
+    border-top: 3px solid #f59e0b;
+    padding: 14px 18px;
+    color: #fbbf24;
+    font-size: 12px;
+    line-height: 1.7;
+    user-select: none;
+    pointer-events: none;
+    border-radius: 0 0 12px 12px;
+  }
+  .lm-footer-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #fbbf24;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .lm-footer-fpi {
+    font-family: ui-monospace, Consolas, monospace;
+    color: #fbbf24;
+  }
+  .lm-footer-text {
+    margin-bottom: 6px;
+    color: #fbbf24;
+    text-align: justify;
+  }
+  .lm-footer-text:last-child {
+    margin-bottom: 0;
+  }
+
+  @media (max-width:960px){
+    .app{grid-template-columns:1fr;}
+    .side{position:static;}
+    .charts-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body data-lm-fp="LM-SSC-4C4D-2024" data-lm-author="林梦龙">
+
+<!-- ================= 隐形指纹容器（不显示、不可见、不可选中） ================= -->
+<div id="_0xLM_sigbox"
+     data-lm-sig="_0xLM_SIG_2024"
+     data-lm-fp="LM-SSC-4C4D-2024"
+     aria-hidden="true"
+     style="position:absolute;left:-99999px;top:-99999px;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;user-select:none;"></div>
+
+<div class="app">
+
+  <aside class="side" data-lm-fp="LM-SSC-4C4D-2024">
+    <div class="brand">
+      <div class="brand-icon">📦</div>
+      <h1>OTB 限额采购计算器 <span class="by">By 林梦龙</span></h1>
+    </div>
+
+    <div class="auth-badge">正版授权</div>
+
+    <div class="sec-title">商品主数据</div>
+
+    <div class="field">
+      <label>商品名称<span class="hint">product name</span></label>
+      <input type="text" id="productName" value="示例商品" placeholder="请输入商品名称">
+    </div>
+
+    <div class="field">
+      <label>采购单价（元）<span class="hint">cost</span></label>
+      <input type="number" id="cost" value="85" step="0.01">
+    </div>
+
+    <div class="field">
+      <label>初始加价率 IMU（%）<span class="hint">Initial MarkUp</span></label>
+      <input type="number" id="imu" value="75" step="0.01">
+    </div>
+
+    <div class="field">
+      <label>吊牌价 / 零售价（元）<span class="hint act">可手动输入反推 IMU</span></label>
+      <input type="number" id="tagPrice" value="340" step="0.01">
+    </div>
+
+    <div class="field">
+      <label>残值 / 折后回收价（元）<span class="hint">residual</span></label>
+      <input type="number" id="residual" value="40" step="0.01">
+    </div>
+
+    <div class="field">
+      <label>采购量 / MOQ（件）<span class="hint">quantity</span></label>
+      <input type="number" id="qty" value="2000" step="1">
+    </div>
+
+    <div class="field">
+      <label>上架日期<span class="hint">launch</span></label>
+      <input type="date" id="startDate" value="2026-09-01">
+    </div>
+
+    <div class="field">
+      <label>减价百分比（%）<span class="hint">markdown %</span></label>
+      <input type="number" id="markdownPct" value="0" step="0.1" min="0" max="100">
+    </div>
+
+    <div class="field">
+      <label>减价数量<span class="hint">markdown qty</span></label>
+      <input type="number" id="markdownQty" value="1" step="1" min="0">
+    </div>
+
+    <div class="field">
+      <label>总减价损失（元）<span class="hint">= 吊牌价 × (1 − 减价%) × 减价数量</span></label>
+      <input type="text" id="markdownLoss" value="0.00" readonly>
+    </div>
+
+    <div class="export-bar">
+      <button class="btn primary" onclick="exportExcel()">📥 导出 Excel</button>
+      <button class="btn ghost" onclick="document.getElementById('importFile').click()">📤 上传恢复</button>
+      <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)">
+    </div>
+    <div class="export-bar" style="margin-top:8px;">
+      <button class="btn" onclick="exportImage('png')">🖼 导出 PNG</button>
+      <button class="btn" onclick="exportImage('jpg')">🖼 导出 JPG</button>
+    </div>
+    <button class="btn" style="margin-top:8px;" onclick="resetAll()">恢复示例数据</button>
+  </aside>
+
+  <main class="main">
+
+    <div class="promo">
+      <div class="promo-line1">所有方法，请通过公众号 <span class="promo-name">林梦龙</span> ，购买书籍</div>
+      <div class="promo-btns">
+        <span class="promo-btn">《供应链库存与计划管理》</span>
+        <span class="promo-link">以及订阅</span>
+        <span class="promo-btn hl">《AI穿透供应链：从需求预测到资金回笼的智能博弈》</span>
+        <span class="promo-ok">均可了解</span>
+      </div>
+    </div>
+
+    <div id="exportArea" data-lm-fp="LM-SSC-4C4D-2024">
+
+      <section class="card">
+        <h2><span class="num">①</span>商品主数据与临界比率
+          <span id="displayProductName">示例商品</span>
+        </h2>
+
+        <div class="highlight-box">
+          识别结果：目标售罄率 = 临界比率 <span class="big" id="kpi-cr-text">85.71%</span>
+          <span style="color:#d9c9f0;font-size:13px;display:block;margin-top:2px;">
+            短缺成本 Cs 与超额成本 Ce 平衡点，即 OTB 备货最优点
+          </span>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi">
+            <span class="kpi-label">吊牌价 / 零售价</span>
+            <span class="kpi-value gold" id="kpi-tag">340.00</span><span class="kpi-unit">元</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi-label">短缺成本 Cs</span>
+            <span class="kpi-value blue" id="kpi-cs">255.00</span><span class="kpi-unit">元</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi-label">超额成本 Ce</span>
+            <span class="kpi-value" id="kpi-ce">45.00</span><span class="kpi-unit">元</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi-label">临界比率 CR</span>
+            <span class="kpi-value green" id="kpi-cr">85.71%</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi-label">目标售罄数</span>
+            <span class="kpi-value gold" id="kpi-target-sales">1714</span><span class="kpi-unit">件</span>
+          </div>
+        </div>
+
+        <!-- 对比图表（含指纹绑定） -->
+        <div class="charts-grid">
+          <div class="chart-box"
+               data-lm-fp="LM-SSC-4C4D-2024"
+               data-lm-author="林梦龙"
+               data-lm-sig="_0xLM_SIG_2024">
+            <div class="chart-box-title">目标售罄 vs 累计实际售出</div>
+            <div class="chart-canvas-wrap">
+              <canvas id="chartSales"
+                      data-lm-fp="LM-SSC-4C4D-2024"
+                      data-lm-sig="_0xLM_SIG_2024"></canvas>
+            </div>
+            <div class="chart-pct" id="chartSalesPct">—</div>
+          </div>
+          <div class="chart-box"
+               data-lm-fp="LM-SSC-4C4D-2024"
+               data-lm-author="林梦龙"
+               data-lm-sig="_0xLM_SIG_2024">
+            <div class="chart-box-title">预算 OTB 成本 vs 实际 OTB 成本</div>
+            <div class="chart-canvas-wrap">
+              <canvas id="chartOtb"
+                      data-lm-fp="LM-SSC-4C4D-2024"
+                      data-lm-sig="_0xLM_SIG_2024"></canvas>
+            </div>
+            <div class="chart-pct" id="chartOtbPct">—</div>
+          </div>
+        </div>
+
+      </section>
+
+      <section class="card">
+        <h2><span class="num">②</span>阶段销售计划 <span class="sub">单月设置 · 售罄率合计100%</span></h2>
+
+        <div class="rate-sum-bar">
+          <span class="lbl">阶段售罄率合计：</span>
+          <span class="rate-sum-val" id="rate-sum">0.0%</span>
+          <span class="rate-hint bad" id="rate-sum-hint">✗ 需调整至 100%</span>
+        </div>
+
+        <div class="toolbar">
+          <button class="btn sm primary" onclick="addStageRow()">➕ 添加月份</button>
+          <button class="btn sm ghost" onclick="resetStages()">重置阶段</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>月份</th>
+                <th>阶段售罄率%</th>
+                <th>实际阶段售罄率</th>
+                <th>本期计划售出</th>
+                <th>本期实际售出</th>
+                <th>达成比率</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="stage-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="note">
+          各阶段售罄率之和必须为 <b>100%</b>；月份限整月，直接同步至下方 OTB 表格。
+          实际售罄率依据下方 <b>OTB月度实际</b> 中的实际销售数据计算。
+        </div>
+      </section>
+
+      <section class="card">
+        <h2><span class="num">③</span>OTB 月度采购预算 <span class="sub">存销比 / 减价损失可修改</span></h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>月份</th>
+                <th>计划销售<br>（件）</th>
+                <th>计划销售<br>收入</th>
+                <th>目标<br>存销比</th>
+                <th>计划月初<br>库存</th>
+                <th>建议采购<br>数量</th>
+                <th>计划剩余<br>库存量</th>
+                <th>计划减价<br>损失</th>
+                <th>计划月末<br>库存</th>
+                <th>OTB<br>金额</th>
+                <th>OTB<br>成本</th>
+              </tr>
+            </thead>
+            <tbody id="month-tbody"></tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td colspan="5" style="text-align: right; padding-right: 20px;">合计</td>
+                <td id="tot-suggest">0</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td id="tot-otb">0</td>
+                <td id="tot-otbcost">0</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section class="card card-actual">
+        <h2><span class="num">④</span>OTB 月度实际 <span class="sub">输入实际销售件数，其余自动计算</span></h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>月份</th>
+                <th>实际销售<br>（件）</th>
+                <th>实际销售<br>收入</th>
+                <th>实际<br>存销比</th>
+                <th>实际月初<br>库存</th>
+                <th>实际采购<br>数量</th>
+                <th>剩余<br>库存量</th>
+                <th>实际减价<br>损失</th>
+                <th>实际月末<br>库存</th>
+                <th>OTB<br>金额</th>
+                <th>OTB<br>成本</th>
+              </tr>
+            </thead>
+            <tbody id="actual-tbody"></tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td colspan="5" style="text-align: right; padding-right: 20px;">合计</td>
+                <td id="act-tot-purchase">0</td>
+                <td id="act-tot-final-stock">0</td>
+                <td colspan="2" style="text-align: right; padding-right: 20px;"></td>
+                <td id="act-tot-otb">0</td>
+                <td id="act-tot-otbcost">0</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ 页脚声明（导出图片时可见） ============ -->
+      <footer class="lm-footer"
+              data-lm-fp="LM-SSC-4C4D-2024"
+              data-lm-sig="_0xLM_SIG_2024">
+        <div class="lm-footer-header">
+          <span>© 2024 林梦龙-OTB限额采购智能计算器-版权所有，侵权必究</span>
+          <span class="lm-footer-fpi">FPI: 4C4D-535348-32303234-4C696E7A</span>
+        </div>
+        <div class="lm-footer-text">
+          【免责声明】本工具为库存分类辅助工具，所有分类识别结果与结论仅供参考，不构成任何采购、库存、资金或商业决策建议。使用者应自行评估数据质量、分类模型适用性，因使用本工具及其结果所产生的一切直接或间接后果，均由使用者自行承担。
+        </div>
+        <div class="lm-footer-text">
+          【版权声明】本软件的源代码、分类识别算法、分类逻辑、界面设计、图表渲染代码及文档资料均受《中华人民共和国著作权法》及相关国际公约保护。著作权归 林梦龙 所有。未经著作权人书面授权，禁止以任何形式复制、修改、反编译、分发、转售、出租或用于任何商业用途。如有侵权，权利人将依法追究其民事和刑事责任。
+        </div>
+      </footer>
+
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ==================== 隐形水印与数字指纹 ==================== */
+const _0xLM_SIG_2024 =
+  '\u200b\u200c\u200d\u2060\u200b\u200c\u200d\u2060\u200b\u200c\u200d\u2060\u200b\u200c\u200d\u2060' +
+  '\u200b\u200c\u200d\u2060\u200b\u200c\u200d\u2060\u200b\u200c\u200d\u2060\u200b\u200c\u200d\u2060';
+
+const _0xLM_FINGERPRINT = 'LM-SSC-4C4D-2024';
+const _0xLM_AUTHOR      = '林梦龙';
+
+/* ---------- 图表渲染层水印函数 ---------- */
+function _0xLM_paintWatermark(chart) {
+  const ctx = chart.ctx;
+  const w = chart.width;
+  const h = chart.height;
+
+  /* 层 1：中心斜向淡隐水印（已修改为中文作者名） */
+  ctx.save();
+  ctx.translate(w / 2, h / 2);
+  ctx.rotate(-Math.PI / 6);
+  ctx.font = 'bold 14px "PingFang SC","Microsoft YaHei","Segoe UI",sans-serif';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(_0xLM_AUTHOR, 0, 0);
+  ctx.restore();
+
+  /* 层 2：右下角明水印 */
+  ctx.save();
+  ctx.font = '11px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('水印：' + _0xLM_AUTHOR, w - 8, h - 6);
+  ctx.restore();
+
+  /* 层 3：隐形零宽字符签名 */
+  ctx.save();
+  ctx.font = '1px monospace';
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.004)';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(_0xLM_SIG_2024, 1, 1);
+  ctx.restore();
+}
+
+/* ---------- 注册为 Chart.js 全局插件 ---------- */
+const _0xLM_watermarkPlugin = {
+  id: 'lmWatermark',
+  afterDraw: (chart) => {
+    try { _0xLM_paintWatermark(chart); } catch (e) {}
+  },
+  afterUpdate: (chart) => {
+    try { _0xLM_paintWatermark(chart); } catch (e) {}
+  }
+};
+if (typeof Chart !== 'undefined') {
+  Chart.register(_0xLM_watermarkPlugin);
+}
+
+/* ---------- 将零宽字符签名注入文档 ---------- */
+(function _0xLM_injectFingerprint(){
+  try {
+    document.body.setAttribute('data-lm-sig', _0xLM_SIG_2024);
+    document.title = document.title + '\u200b' + _0xLM_SIG_2024;
+    const box = document.getElementById('_0xLM_sigbox');
+    if (box) {
+      box.textContent = _0xLM_SIG_2024 + ' · ' + _0xLM_FINGERPRINT;
+    }
+  } catch(e){}
+})();
+
+/* ==================== 工具函数 ==================== */
+const $ = id => document.getElementById(id);
+const num = id => parseFloat($(id).value) || 0;
+const fmt = (n, d = 0) =>
+  (isFinite(n) ? n : 0).toLocaleString('zh-CN', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+function monthLabelFromKey(k){ return parseInt(k.split('-')[1], 10) + '月'; }
+function addMonths(ymStr, months){
+  const [y, m] = ymStr.split('-').map(Number);
+  const d = new Date(y, m - 1 + months, 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+function diffMonths(startYM, endYM){
+  const [sy, sm] = startYM.split('-').map(Number);
+  const [ey, em] = endYM.split('-').map(Number);
+  return (ey - sy) * 12 + (em - sm);
+}
+
+function applyMoqHint(el, totalQty, moq){
+  if (!el) return;
+  if (moq > 0 && totalQty < moq){
+    el.classList.add('glow-warning');
+    el.title = `合计 ${fmt(totalQty, 0)} 件 < 采购量/MOQ ${fmt(moq, 0)} 件，请补足采购量`;
+  } else {
+    el.classList.remove('glow-warning');
+    el.title = '';
+  }
+}
+
+/* ==================== 全局状态 ==================== */
+const DEFAULT_START = '2026-09-01';
+
+let stages = [];
+let budgetStore = {};
+let actualStore = {};
+let actualPurchaseInput = {};
+let actualPurchaseConfirmed = {};
+let currentMonths = [];
+
+let tagLocked = false;
+
+let chartSalesObj = null;
+let chartOtbObj = null;
+
+function generateDefaultStages(baseDateStr) {
+  const base = baseDateStr ? baseDateStr.substring(0, 7) : '2026-09';
+  return [
+    { month: addMonths(base, 0), rate: 30 },
+    { month: addMonths(base, 1), rate: 25 },
+    { month: addMonths(base, 2), rate: 25 },
+    { month: addMonths(base, 3), rate: 10 },
+    { month: addMonths(base, 4), rate: 10 }
+  ];
+}
+
+function syncTagFromCostImu(){
+  const cost = num('cost');
+  const imu  = num('imu');
+  if (imu >= 100 || imu < 0 || cost <= 0) return;
+  const tag = cost / (1 - imu / 100);
+  $('tagPrice').value = tag.toFixed(2);
+}
+
+function syncImuFromTag(){
+  const cost = num('cost');
+  const tag  = num('tagPrice');
+  if (tag <= 0) return;
+  const imu = (1 - cost / tag) * 100;
+  $('imu').value = imu.toFixed(2);
+}
+
+function addStageRow(){
+  const last = stages[stages.length - 1];
+  let newMonth;
+  if (last && last.month){
+    newMonth = addMonths(last.month, 1);
+  } else {
+    newMonth = '2026-09';
+  }
+  stages.push({ month: newMonth, rate: 0 });
+  buildStageRows();
+  recalc();
+}
+
+function removeStageRow(index){
+  if (stages.length <= 1) return;
+  stages.splice(index, 1);
+  buildStageRows();
+  recalc();
+}
+
+function resetStages(){
+  if (confirm('确定要重置阶段计划吗？')) {
+    stages = generateDefaultStages($('startDate').value || DEFAULT_START);
+    buildStageRows();
+    recalc();
+  }
+}
+
+function buildStageRows(){
+  $('stage-tbody').innerHTML = stages.map((s, i) => {
+    return `
+    <tr>
+      <td>
+        <input type="month" class="mini-month" value="${s.month}"
+               onchange="onStageMonth(${i}, this.value)">
+      </td>
+      <td>
+        <input class="mini" type="number" min="0" max="100" step="0.1" value="${s.rate}"
+               oninput="onStageRate(${i}, this.value)">
+      </td>
+      <td id="st-actual-rate-${i}">-</td>
+      <td id="st-sold-${i}">-</td>
+      <td id="st-actual-sold-${i}">-</td>
+      <td id="st-achieve-${i}">-</td>
+      <td>
+        <button class="btn icon-btn danger" onclick="removeStageRow(${i})" title="删除此行">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function onStageMonth(i, val){
+  if (!val) return;
+  stages[i].month = val;
+  recalc();
+}
+function onStageRate(i, val){
+  stages[i].rate = parseFloat(val) || 0;
+  recalc();
+}
+
+function mainCalcs(){
+  const cost     = num('cost');
+  const imu      = num('imu');
+  const residual = num('residual');
+  const qty      = num('qty');
+  let   tagPrice = num('tagPrice');
+
+  if (tagPrice <= 0 && imu < 100){
+    tagPrice = cost / (1 - imu / 100);
+  }
+
+  const Cs = tagPrice - cost;
+  const Ce = cost - residual;
+  const CR = (Cs + Ce) > 0 ? Cs / (Cs + Ce) : 0;
+
+  return { cost, imu, residual, qty, tagPrice, Cs, Ce, CR };
+}
+
+function distributeStagesToMonths(){
+  const M = mainCalcs();
+  const monthMap = new Map();
+
+  const sortedStages = [...stages].sort((a, b) => a.month < b.month ? -1 : 1);
+
+  sortedStages.forEach(s => {
+    const sold = M.qty * s.rate / 100;
+    const revenue = sold * M.tagPrice;
+    monthMap.set(s.month, { sold, revenue });
+  });
+
+  const keys = Array.from(monthMap.keys()).sort();
+  return keys.map(k => ({
+    key: k,
+    label: monthLabelFromKey(k),
+    sold: monthMap.get(k).sold,
+    revenue: monthMap.get(k).revenue
+  }));
+}
+
+function getAllMonths(){
+  return Array.from(new Set(stages.map(s => s.month))).sort().map(k => ({
+    key: k,
+    label: monthLabelFromKey(k)
+  }));
+}
+
+function onBudgetInput(key, field, val){
+  if (!budgetStore[key]) budgetStore[key] = { ratio: 1.6, markdown: 0 };
+  budgetStore[key][field] = parseFloat(val) || 0;
+  recalc();
+}
+
+function renderBudgetTable(months, M){
+  const tbody = $('month-tbody');
+  const keys = months.map(m => m.key).join('|');
+
+  if (tbody.dataset.keys !== keys){
+    tbody.dataset.keys = keys;
+    tbody.innerHTML = months.map((m, i) => {
+      if (!budgetStore[m.key]) budgetStore[m.key] = { ratio: 1.6, markdown: 0 };
+      const st = budgetStore[m.key];
+      return `
+      <tr>
+        <td>${m.label}</td>
+        <td id="mo-sold-${i}">-</td>
+        <td id="mo-rev-${i}">-</td>
+        <td>
+          <input class="mini" type="number" step="0.01" min="0" value="${st.ratio.toFixed(2)}"
+                 oninput="onBudgetInput('${m.key}','ratio',this.value)">
+        </td>
+        <td id="mo-begin-${i}">-</td>
+        <td id="mo-suggest-${i}">-</td>
+        <td id="mo-remain-${i}">-</td>
+        <td>
+          <input class="mini" type="number" step="1" min="0" value="${st.markdown.toFixed(0)}"
+                 oninput="onBudgetInput('${m.key}','markdown',this.value)">
+        </td>
+        <td id="mo-end-${i}">-</td>
+        <td id="mo-otb-${i}" class="num-otb">-</td>
+        <td id="mo-otbcost-${i}">-</td>
+      </tr>`;
+    }).join('');
+  }
+
+  const calc = months.map(m => {
+    const st = budgetStore[m.key] || { ratio: 1.6, markdown: 0 };
+    const begin = st.ratio * m.revenue;
+    const end   = begin - m.revenue - st.markdown;
+    return { ...m, ratio: st.ratio, markdown: st.markdown, begin, end, otb: 0, otbCost: 0, suggestedQty: 0 };
+  });
+
+  for (let i = 0; i < calc.length; i++){
+    if (i < calc.length - 1) calc[i].otb = calc[i + 1].begin - calc[i].end;
+    calc[i].otbCost = calc[i].otb * (1 - M.imu / 100);
+  }
+
+  for (let i = 0; i < calc.length; i++) {
+    if (i === 0) {
+      calc[i].suggestedQty = calc[i].sold * calc[i].ratio;
+    } else {
+      const prevOtbCost = calc[i - 1].otbCost;
+      calc[i].suggestedQty = prevOtbCost / (M.cost || 1);
+    }
+  }
+
+  let totOtb = 0, totCost = 0;
+  let totSuggest = 0;
+  let cumRemain = 0;
+
+  calc.forEach((c, i) => {
+    $('mo-sold-'  + i).textContent = fmt(c.sold, 0);
+    $('mo-rev-'   + i).textContent = fmt(c.revenue, 0);
+    $('mo-begin-' + i).textContent = fmt(c.begin, 0);
+    $('mo-suggest-' + i).textContent = fmt(c.suggestedQty, 0);
+
+    const sq = c.suggestedQty || 0;
+    if (sq >= 0) {
+      cumRemain += sq - (c.sold || 0);
+    }
+    $('mo-remain-' + i).textContent = fmt(cumRemain, 0);
+
+    $('mo-end-'   + i).textContent = fmt(c.end, 0);
+
+    const o = $('mo-otb-' + i);
+    o.textContent = fmt(c.otb, 0);
+    o.classList.toggle('num-neg', c.otb < 0);
+
+    $('mo-otbcost-' + i).textContent = fmt(c.otbCost, 0);
+
+    totOtb  += c.otb;
+    totCost += c.otbCost;
+    totSuggest += sq;
+  });
+
+  $('tot-otb').textContent     = fmt(totOtb, 0);
+  $('tot-otbcost').textContent = fmt(totCost, 0);
+
+  const totSuggestEl = $('tot-suggest');
+  totSuggestEl.textContent = fmt(totSuggest, 0);
+  applyMoqHint(totSuggestEl, totSuggest, M.qty);
+
+  return calc;
+}
+
+function onActualInput(key, val){
+  if (!actualStore[key]) actualStore[key] = { sold: 0 };
+  actualStore[key].sold = parseFloat(val) || 0;
+  recalc();
+}
+
+function onActualPurchaseInput(key, val){
+  const numVal = parseFloat(val) || 0;
+  actualPurchaseInput[key] = numVal;
+
+  if (actualPurchaseConfirmed[key] !== undefined &&
+      Math.round(numVal) !== actualPurchaseConfirmed[key]) {
+    delete actualPurchaseConfirmed[key];
+    recalc();
+  }
+}
+
+function confirmPurchase(key, idx){
+  const input = $('ac-purchase-' + idx);
+  if (!input) return;
+  const val = Math.round(parseFloat(input.value) || 0);
+  input.value = val;
+  actualPurchaseInput[key] = val;
+  actualPurchaseConfirmed[key] = val;
+  recalc();
+}
+
+function renderActualTable(months, budgetCalc, M){
+  const tbody = $('actual-tbody');
+  const keys = months.map(m => m.key).join('|');
+
+  const calc = [];
+  for (let i = 0; i < months.length; i++) {
+    const m = months[i];
+    const sold = actualStore[m.key]?.sold || 0;
+    const revenue = sold * M.tagPrice;
+
+    let begin;
+    if (i === 0) {
+      begin = budgetCalc[i] ? budgetCalc[i].begin : 0;
+    } else {
+      begin = calc[i - 1].end;
+    }
+
+    const planRev = m.revenue;
+    const planMarkdown = budgetStore[m.key]?.markdown || 0;
+    let markdown = 0;
+    if (planRev > 0) markdown = planMarkdown * (revenue / planRev);
+    else markdown = planMarkdown;
+
+    let purchaseQty;
+    let isConfirmed = false;
+    if (actualPurchaseConfirmed[m.key] !== undefined) {
+      purchaseQty = actualPurchaseConfirmed[m.key];
+      isConfirmed = true;
+    } else if (i === 0) {
+      purchaseQty = (budgetCalc[0] && budgetCalc[0].suggestedQty) ? budgetCalc[0].suggestedQty : 0;
+    } else {
+      const prevOtbCost = calc[i - 1].otbCost;
+      purchaseQty = prevOtbCost / (M.cost || 1);
+    }
+
+    const purchaseAmount = purchaseQty * M.cost;
+    const end = begin + purchaseAmount - revenue - markdown;
+    const ratio = revenue > 0 ? begin / revenue : 0;
+
+    let otb = 0;
+    if (i < months.length - 1) {
+      const nextBudgetBegin = budgetCalc[i + 1] ? budgetCalc[i + 1].begin : 0;
+      otb = nextBudgetBegin - end;
+    }
+    const otbCost = otb * (1 - M.imu / 100);
+
+    calc.push({
+      ...m, sold, revenue, begin, markdown, end, ratio, otb, otbCost,
+      purchaseQty, purchaseAmount, isConfirmed,
+      remainingQty: 0
+    });
+  }
+
+  let runningRemain = 0;
+  for (let i = 0; i < calc.length; i++) {
+    const c = calc[i];
+    if (i === 0) {
+      runningRemain = (c.purchaseQty || 0) - (c.sold || 0);
+    } else {
+      const confirmedQty = actualPurchaseConfirmed[c.key];
+      if (confirmedQty !== undefined && confirmedQty >= 0) {
+        runningRemain += confirmedQty - (c.sold || 0);
+      }
+    }
+    c.remainingQty = runningRemain;
+  }
+
+  if (tbody.dataset.keys !== keys){
+    tbody.dataset.keys = keys;
+    tbody.innerHTML = months.map((m, i) => {
+      const c = calc[i];
+      if (!actualStore[m.key]) actualStore[m.key] = { sold: 0 };
+      const st = actualStore[m.key];
+
+      const storedInput = actualPurchaseInput[m.key];
+      const displayVal = (storedInput !== undefined)
+        ? Math.round(storedInput)
+        : Math.round(c.purchaseQty);
+
+      const inputStyle = c.isConfirmed
+        ? 'color:#fcc94f;border-color:#fcc94f;font-weight:700;'
+        : '';
+
+      const btnStyle = c.isConfirmed
+        ? 'border-color:#fcc94f;color:#fcc94f;background:rgba(252,201,79,.15);'
+        : '';
+
+      return `
+      <tr>
+        <td>${m.label}</td>
+        <td>
+          <input class="mini" type="number" step="1" min="0" value="${st.sold}"
+                 oninput="onActualInput('${m.key}', this.value)">
+        </td>
+        <td id="ac-rev-${i}">-</td>
+        <td id="ac-ratio-${i}">-</td>
+        <td id="ac-begin-${i}">-</td>
+        <td class="cell-purchase">
+          <input class="mini" type="number" step="1" value="${displayVal}"
+                 style="${inputStyle}"
+                 oninput="onActualPurchaseInput('${m.key}', this.value)"
+                 id="ac-purchase-${i}">
+          <button class="btn icon-btn" id="ac-purchase-btn-${i}"
+                  style="margin-left:3px;${btnStyle}"
+                  onclick="confirmPurchase('${m.key}',${i})"
+                  title="确认实际采购数量并重新计算">✓</button>
+        </td>
+        <td id="ac-remain-${i}">-</td>
+        <td id="ac-markdown-${i}">-</td>
+        <td id="ac-end-${i}">-</td>
+        <td id="ac-otb-${i}" class="num-otb">-</td>
+        <td id="ac-otbcost-${i}">-</td>
+      </tr>`;
+    }).join('');
+  } else {
+    for (let i = 0; i < months.length; i++) {
+      const m = months[i];
+      const c = calc[i];
+
+      const inp = $('ac-purchase-' + i);
+      if (inp){
+        if (document.activeElement !== inp) {
+          const storedInput = actualPurchaseInput[m.key];
+          const displayVal = (storedInput !== undefined)
+            ? Math.round(storedInput)
+            : Math.round(c.purchaseQty);
+          inp.value = displayVal;
+        }
+        if (c.isConfirmed){
+          inp.style.color = '#fcc94f';
+          inp.style.borderColor = '#fcc94f';
+          inp.style.fontWeight = '700';
+        } else {
+          inp.style.color = '';
+          inp.style.borderColor = '';
+          inp.style.fontWeight = '';
+        }
+      }
+
+      const btn = $('ac-purchase-btn-' + i);
+      if (btn){
+        if (c.isConfirmed){
+          btn.style.borderColor = '#fcc94f';
+          btn.style.color = '#fcc94f';
+          btn.style.background = 'rgba(252,201,79,.15)';
+        } else {
+          btn.style.borderColor = '';
+          btn.style.color = '';
+          btn.style.background = '';
+        }
+      }
+    }
+  }
+
+  let totOtb = 0, totCost = 0;
+  let totPurchase = 0;
+  calc.forEach((c, i) => {
+    $('ac-rev-'     + i).textContent = fmt(c.revenue, 0);
+    $('ac-ratio-'   + i).textContent = c.ratio.toFixed(2);
+    $('ac-begin-'   + i).textContent = fmt(c.begin, 0);
+    $('ac-remain-'  + i).textContent = fmt(c.remainingQty, 0);
+    $('ac-markdown-'+ i).textContent = fmt(c.markdown, 0);
+    $('ac-end-'     + i).textContent = fmt(c.end, 0);
+
+    const o = $('ac-otb-' + i);
+    o.textContent = fmt(c.otb, 0);
+    o.classList.toggle('num-neg', c.otb < 0);
+
+    $('ac-otbcost-' + i).textContent = fmt(c.otbCost, 0);
+
+    const confirmedQty = actualPurchaseConfirmed[c.key];
+    const includeInOtbTotal = (i === 0) || (confirmedQty !== undefined);
+    if (includeInOtbTotal) {
+      totOtb  += c.otb;
+      totCost += c.otbCost;
+    }
+
+    totPurchase += (c.purchaseQty || 0);
+  });
+
+  $('act-tot-otb').textContent     = fmt(totOtb, 0);
+  $('act-tot-otbcost').textContent = fmt(totCost, 0);
+
+  const totPurchaseEl = $('act-tot-purchase');
+  totPurchaseEl.textContent = fmt(totPurchase, 0);
+  applyMoqHint(totPurchaseEl, totPurchase, M.qty);
+
+  const finalRemain = calc.length > 0 ? calc[calc.length - 1].remainingQty : 0;
+  $('act-tot-final-stock').textContent = fmt(finalRemain, 0);
+
+  return calc;
+}
+
+function calcStageActualRates(months, actualCalc){
+  const soldMap = {};
+  months.forEach((m, i) => {
+    soldMap[m.key] = actualCalc[i]?.sold || 0;
+  });
+
+  const M = mainCalcs();
+
+  return stages.map((s, i) => {
+    const planSold = M.qty * s.rate / 100;
+    const actualSold = soldMap[s.month] || 0;
+    const actualRate = M.qty > 0 ? (actualSold / M.qty) * 100 : 0;
+    const achieveRate = planSold > 0 ? (actualSold / planSold) * 100 : 0;
+
+    return {
+      planSold,
+      actualSold,
+      planRate: s.rate,
+      actualRate,
+      achieveRate
+    };
+  });
+}
+
+function renderStageStats(stageStats, M){
+  stageStats.forEach((st, i) => {
+    const rateEl = $('st-actual-rate-' + i);
+    if (rateEl){
+      const pct = st.actualRate;
+      rateEl.innerHTML = `
+        <div class="progress-wrap">
+          <div class="progress"><div class="progress-bar" style="width:${Math.min(pct,100)}%"></div></div>
+          <span class="progress-text">${pct.toFixed(1)}%</span>
+        </div>`;
+    }
+
+    $('st-sold-' + i).textContent = fmt(st.planSold, 0);
+    $('st-actual-sold-' + i).textContent = fmt(st.actualSold, 0);
+
+    const achieveEl = $('st-achieve-' + i);
+    if (achieveEl) {
+      const pct = st.achieveRate;
+      const barColor = pct >= 100 ? 'progress-bar green' : 'progress-bar gold';
+      achieveEl.innerHTML = `
+        <div class="progress-wrap">
+          <div class="progress"><div class="${barColor}" style="width:${Math.min(pct,100)}%"></div></div>
+          <span class="progress-text">${pct.toFixed(1)}%</span>
+        </div>`;
+    }
+  });
+}
+
+function renderCharts(M, actualSoldTotal, budgetOtbCostTotal, actualOtbCostTotal){
+  const targetQty = M.CR * M.qty;
+
+  if (!chartSalesObj){
+    const ctx = $('chartSales').getContext('2d');
+    chartSalesObj = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['目标售罄件数', '累计实际售出'],
+        datasets: [{
+          data: [targetQty, actualSoldTotal],
+          backgroundColor: ['rgba(252,201,79,0.8)', 'rgba(77,227,245,0.8)'],
+          borderColor: ['#fcc94f', '#4de3f5'],
+          borderWidth: 1.5,
+          borderRadius: 6,
+          barThickness: 56
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { top: 24 } },
+        animation: { duration: 300 },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#2a1f4a',
+            borderColor: '#6d3fbd',
+            borderWidth: 1,
+            titleColor: '#f3e8ff',
+            bodyColor: '#d9c9f0',
+            callbacks: {
+              label: ctx => ctx.parsed.y.toLocaleString('zh-CN') + ' 件'
+            }
+          },
+          datalabels: {
+            anchor: 'end',
+            align: 'top',
+            offset: 4,
+            color: '#faf5ff',
+            font: { size: 12, weight: 'bold' },
+            formatter: (value) => Number(value).toLocaleString('zh-CN', { maximumFractionDigits: 0 })
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: '#d9c9f0', font: { size: 12 } }
+          },
+          y: {
+            grid: { color: 'rgba(185,117,255,0.15)' },
+            ticks: { color: '#d9c9f0', font: { size: 12 } },
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  } else {
+    chartSalesObj.data.datasets[0].data = [targetQty, actualSoldTotal];
+    chartSalesObj.update('none');
+  }
+
+  try { _0xLM_paintWatermark(chartSalesObj); } catch(e){}
+
+  const pct1 = targetQty > 0 ? (actualSoldTotal / targetQty) * 100 : 0;
+  const pct1El = $('chartSalesPct');
+  pct1El.textContent = `累计实际 / 目标 = ${pct1.toFixed(2)}%`;
+  pct1El.style.color = pct1 >= 100 ? '#4ed8a8' : (pct1 >= 50 ? '#fcc94f' : '#ff8a8a');
+
+  if (!chartOtbObj){
+    const ctx = $('chartOtb').getContext('2d');
+    chartOtbObj = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['预算 OTB 成本', '实际 OTB 成本'],
+        datasets: [{
+          data: [budgetOtbCostTotal, actualOtbCostTotal],
+          backgroundColor: ['rgba(185,117,255,0.8)', 'rgba(77,227,245,0.8)'],
+          borderColor: ['#b975ff', '#4de3f5'],
+          borderWidth: 1.5,
+          borderRadius: 6,
+          barThickness: 56
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { top: 24 } },
+        animation: { duration: 300 },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#2a1f4a',
+            borderColor: '#6d3fbd',
+            borderWidth: 1,
+            titleColor: '#f3e8ff',
+            bodyColor: '#d9c9f0',
+            callbacks: {
+              label: ctx => ctx.parsed.y.toLocaleString('zh-CN', {maximumFractionDigits: 0}) + ' 元'
+            }
+          },
+          datalabels: {
+            anchor: 'end',
+            align: 'top',
+            offset: 4,
+            color: '#faf5ff',
+            font: { size: 12, weight: 'bold' },
+            formatter: (value) => Number(value).toLocaleString('zh-CN', { maximumFractionDigits: 0 })
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: '#d9c9f0', font: { size: 12 } }
+          },
+          y: {
+            grid: { color: 'rgba(185,117,255,0.15)' },
+            ticks: { color: '#d9c9f0', font: { size: 12 } }
+          }
+        }
+      }
+    });
+  } else {
+    chartOtbObj.data.datasets[0].data = [budgetOtbCostTotal, actualOtbCostTotal];
+    chartOtbObj.update('none');
+  }
+
+  try { _0xLM_paintWatermark(chartOtbObj); } catch(e){}
+
+  let pct2Text, pct2Color;
+  if (Math.abs(budgetOtbCostTotal) > 0.0001){
+    const pct2 = (actualOtbCostTotal / budgetOtbCostTotal) * 100;
+    pct2Text = `实际 / 预算 = ${pct2.toFixed(2)}%`;
+    pct2Color = Math.abs(pct2) <= 100 ? '#4ed8a8' : '#fcc94f';
+  } else {
+    pct2Text = '实际 / 预算 = N/A';
+    pct2Color = '#b9a3d8';
+  }
+  const pct2El = $('chartOtbPct');
+  pct2El.textContent = pct2Text;
+  pct2El.style.color = pct2Color;
+}
+
+function recalc(){
+  const M = mainCalcs();
+
+  const pName = $('productName').value.trim() || '—';
+  $('displayProductName').textContent = pName;
+
+  const pct = num('markdownPct');
+  const mdQty = num('markdownQty');
+  const loss = M.tagPrice * (1 - pct / 100) * mdQty;
+  $('markdownLoss').value = loss.toFixed(2);
+
+  $('kpi-tag').textContent     = fmt(M.tagPrice, 2);
+  $('kpi-cs').textContent      = fmt(M.Cs, 2);
+  $('kpi-ce').textContent      = fmt(M.Ce, 2);
+  $('kpi-cr').textContent      = (M.CR * 100).toFixed(2) + '%';
+  $('kpi-cr-text').textContent = (M.CR * 100).toFixed(2) + '%';
+  $('kpi-target-sales').textContent = fmt(M.CR * M.qty, 0);
+
+  const rateSum = stages.reduce((a, s) => a + (s.rate || 0), 0);
+  $('rate-sum').textContent = rateSum.toFixed(2) + '%';
+  const hint = $('rate-sum-hint');
+  if (Math.abs(rateSum - 100) < 0.001){
+    hint.textContent = '✓ 已平衡至 100%';
+    hint.className = 'rate-hint ok';
+  } else {
+    hint.textContent = '✗ 需调整至 100%（当前差 ' + (100 - rateSum).toFixed(2) + '%）';
+    hint.className = 'rate-hint bad';
+  }
+
+  const months = distributeStagesToMonths();
+  currentMonths = months;
+
+  const budgetCalc = renderBudgetTable(months, M);
+  const actualCalc = renderActualTable(months, budgetCalc, M);
+  const stageStats = calcStageActualRates(months, actualCalc);
+  renderStageStats(stageStats, M);
+
+  const budgetOtbCostTotal = budgetCalc.reduce((s, c) => s + (c.otbCost || 0), 0);
+
+  let actualOtbCostTotal = 0;
+  actualCalc.forEach((c, i) => {
+    const confirmedQty = actualPurchaseConfirmed[c.key];
+    const include = (i === 0) || (confirmedQty !== undefined);
+    if (include) {
+      actualOtbCostTotal += Math.max(0, c.otbCost || 0);
+    }
+  });
+
+  const actualSoldTotal    = actualCalc.reduce((s, c) => s + (c.sold || 0), 0);
+
+  renderCharts(M, actualSoldTotal, budgetOtbCostTotal, actualOtbCostTotal);
+}
+
+function resetAll(){
+  $('productName').value = '示例商品';
+  $('cost').value      = 85;
+  $('imu').value       = 75;
+  $('tagPrice').value  = 340;
+  $('residual').value  = 40;
+  $('qty').value       = 2000;
+  $('startDate').value = DEFAULT_START;
+  $('markdownPct').value = 0;
+  $('markdownQty').value = 1;
+
+  tagLocked = false;
+
+  stages = generateDefaultStages(DEFAULT_START);
+  budgetStore = {};
+  actualStore = {};
+  actualPurchaseInput = {};
+  actualPurchaseConfirmed = {};
+
+  buildStageRows();
+  recalc();
+}
+
+function exportExcel(){
+  const wb = XLSX.utils.book_new();
+
+  const mainData = [
+    ['参数', '值'],
+    ['商品名称', $('productName').value],
+    ['采购单价', num('cost')],
+    ['初始加价率 IMU(%)', num('imu')],
+    ['吊牌价', num('tagPrice')],
+    ['残值', num('residual')],
+    ['采购量 / MOQ', num('qty')],
+    ['上架日期', $('startDate').value],
+    ['减价百分比(%)', num('markdownPct')],
+    ['减价数量', num('markdownQty')],
+    ['总减价损失', num('markdownLoss')],
+    ['版权指纹', _0xLM_FINGERPRINT + ' / ' + _0xLM_AUTHOR],
+    ['隐形签名', '_0xLM_SIG_2024']
+  ];
+  const wsMain = XLSX.utils.aoa_to_sheet(mainData);
+  XLSX.utils.book_append_sheet(wb, wsMain, '主数据');
+
+  const stageData = [['月份', '阶段售罄率%']];
+  stages.forEach(s => stageData.push([s.month, s.rate]));
+  const wsStage = XLSX.utils.aoa_to_sheet(stageData);
+  XLSX.utils.book_append_sheet(wb, wsStage, '阶段');
+
+  const months = getAllMonths();
+  const budgetData = [['月份', '存销比', '减价损失']];
+  months.forEach(m => {
+    const b = budgetStore[m.key] || { ratio: 1.6, markdown: 0 };
+    budgetData.push([m.key, b.ratio, b.markdown]);
+  });
+  const wsBudget = XLSX.utils.aoa_to_sheet(budgetData);
+  XLSX.utils.book_append_sheet(wb, wsBudget, '预算');
+
+  const actualData = [['月份', '实际销售件数', '实际采购数量（已确认）']];
+  months.forEach(m => {
+    const a = actualStore[m.key] || { sold: 0 };
+    const p = actualPurchaseConfirmed[m.key] !== undefined ? actualPurchaseConfirmed[m.key] : '';
+    actualData.push([m.key, a.sold, p]);
+  });
+  const wsActual = XLSX.utils.aoa_to_sheet(actualData);
+  XLSX.utils.book_append_sheet(wb, wsActual, '实际');
+
+  const d = new Date();
+  const pName = ($('productName').value || '商品').trim() || '商品';
+  const fname = `${pName}_OTB计算_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}_${_0xLM_FINGERPRINT}.xlsx`;
+  XLSX.writeFile(wb, fname);
+}
+
+async function exportImage(format){
+  const area = document.getElementById('exportArea');
+  if (!area) return;
+
+  const notes = area.querySelectorAll('.note');
+  const origDisplays = [];
+  notes.forEach((n, i) => {
+    origDisplays[i] = n.style.display;
+    n.style.display = 'none';
+  });
+
+  const origBg = area.style.background;
+  area.style.background = '#1a1230';
+
+  const btns = document.querySelectorAll('.export-bar .btn');
+  btns.forEach(b => b.disabled = true);
+
+  try {
+    try { if (chartSalesObj) _0xLM_paintWatermark(chartSalesObj); } catch(e){}
+    try { if (chartOtbObj) _0xLM_paintWatermark(chartOtbObj); } catch(e){}
+
+    const canvas = await html2canvas(area, {
+      backgroundColor: '#1a1230',
+      scale: 2,
+      useCORS: true,
+      logging: false
+    });
+
+    const outCtx = canvas.getContext('2d');
+    const cw = canvas.width;
+    const ch = canvas.height;
+
+    outCtx.save();
+    outCtx.translate(cw / 2, ch / 2);
+    outCtx.rotate(-Math.PI / 6);
+    outCtx.font = 'bold ' + Math.round(cw / 42) + 'px "PingFang SC","Microsoft YaHei",sans-serif';
+    outCtx.fillStyle = 'rgba(255,255,255,0.05)';
+    outCtx.textAlign = 'center';
+    outCtx.textBaseline = 'middle';
+    outCtx.fillText(_0xLM_AUTHOR, 0, 0);
+    outCtx.restore();
+
+    outCtx.save();
+    outCtx.font = 'bold ' + Math.round(cw / 130) + 'px "PingFang SC","Microsoft YaHei",sans-serif';
+    outCtx.fillStyle = 'rgba(255,255,255,0.4)';
+    outCtx.textAlign = 'right';
+    outCtx.textBaseline = 'bottom';
+    outCtx.fillText('水印：' + _0xLM_AUTHOR + ' · ' + _0xLM_FINGERPRINT, cw - 24, ch - 16);
+    outCtx.restore();
+
+    outCtx.save();
+    outCtx.font = '1px monospace';
+    outCtx.fillStyle = 'rgba(0,0,0,0.004)';
+    outCtx.textAlign = 'left';
+    outCtx.textBaseline = 'top';
+    outCtx.fillText(_0xLM_SIG_2024, 2, 2);
+    outCtx.restore();
+
+    const pName = ($('productName').value || '商品').trim() || '商品';
+    const d = new Date();
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const ext = format === 'jpg' ? 'jpg' : 'png';
+    const mime = format === 'jpg' ? 'image/jpeg' : 'image/png';
+
+    const link = document.createElement('a');
+    link.download = `${pName}_${dateStr}_${_0xLM_FINGERPRINT}.${ext}`;
+    link.href = canvas.toDataURL(mime, format === 'jpg' ? 0.95 : undefined);
+    link.click();
+  } catch(err){
+    console.error(err);
+    alert('导出图片失败，请重试。');
+  } finally {
+    notes.forEach((n, i) => { n.style.display = origDisplays[i]; });
+    area.style.background = origBg;
+    btns.forEach(b => b.disabled = false);
+  }
+}
+
+function importExcel(e){
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    try {
+      const data = new Uint8Array(evt.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+
+      let tagFromFile = null;
+
+      const wsMain = wb.Sheets['主数据'];
+      if (wsMain){
+        const rows = XLSX.utils.sheet_to_json(wsMain, { header: 1 });
+        rows.forEach(r => {
+          if (r[0] === '商品名称') $('productName').value = r[1];
+          if (r[0] === '采购单价') $('cost').value = r[1];
+          if (r[0] === '初始加价率 IMU(%)') $('imu').value = r[1];
+          if (r[0] === '吊牌价') tagFromFile = parseFloat(r[1]);
+          if (r[0] === '残值') $('residual').value = r[1];
+          if (r[0] === '采购量 / MOQ') $('qty').value = r[1];
+          if (r[0] === '上架日期') $('startDate').value = r[1];
+          if (r[0] === '减价百分比(%)') $('markdownPct').value = r[1];
+          if (r[0] === '减价数量') $('markdownQty').value = r[1];
+        });
+      }
+
+      if (tagFromFile !== null && isFinite(tagFromFile) && tagFromFile > 0){
+        $('tagPrice').value = tagFromFile.toFixed(2);
+        tagLocked = true;
+        syncImuFromTag();
+      } else {
+        tagLocked = false;
+        syncTagFromCostImu();
+      }
+
+      const wsStage = wb.Sheets['阶段'];
+      if (wsStage){
+        const rows = XLSX.utils.sheet_to_json(wsStage, { header: 1 });
+        const newStages = [];
+        for (let i = 1; i < rows.length; i++){
+          if (rows[i] && rows[i].length >= 2){
+            newStages.push({
+              month: String(rows[i][0]),
+              rate: parseFloat(rows[i][1]) || 0
+            });
+          }
+        }
+        if (newStages.length) stages = newStages;
+      }
+
+      const wsBudget = wb.Sheets['预算'];
+      if (wsBudget){
+        const rows = XLSX.utils.sheet_to_json(wsBudget, { header: 1 });
+        budgetStore = {};
+        for (let i = 1; i < rows.length; i++){
+          if (rows[i] && rows[i].length >= 3){
+            const key = String(rows[i][0]);
+            budgetStore[key] = {
+              ratio: parseFloat(rows[i][1]) || 1.6,
+              markdown: parseFloat(rows[i][2]) || 0
+            };
+          }
+        }
+      }
+
+      const wsActual = wb.Sheets['实际'];
+      if (wsActual){
+        const rows = XLSX.utils.sheet_to_json(wsActual, { header: 1 });
+        actualStore = {};
+        actualPurchaseInput = {};
+        actualPurchaseConfirmed = {};
+        for (let i = 1; i < rows.length; i++){
+          if (rows[i] && rows[i].length >= 2){
+            const key = String(rows[i][0]);
+            actualStore[key] = { sold: parseFloat(rows[i][1]) || 0 };
+            if (rows[i].length >= 3 && rows[i][2] !== '' && rows[i][2] !== undefined){
+              const v = Math.round(parseFloat(rows[i][2]) || 0);
+              actualPurchaseInput[key] = v;
+              actualPurchaseConfirmed[key] = v;
+            }
+          }
+        }
+      }
+
+      buildStageRows();
+      recalc();
+      alert('数据已恢复，可继续记录使用。');
+    } catch(err){
+      console.error(err);
+      alert('文件解析失败，请检查格式。');
+    }
+    e.target.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ==================== 事件绑定 ==================== */
+$('productName').addEventListener('input', recalc);
+
+$('cost').addEventListener('input', function(){
+  if (tagLocked) syncImuFromTag();
+  else syncTagFromCostImu();
+  recalc();
+});
+
+$('imu').addEventListener('input', function(){
+  tagLocked = false;
+  syncTagFromCostImu();
+  recalc();
+});
+
+$('tagPrice').addEventListener('input', function(){
+  tagLocked = true;
+  syncImuFromTag();
+  recalc();
+});
+
+$('markdownPct').addEventListener('input', recalc);
+$('markdownQty').addEventListener('input', recalc);
+
+['residual', 'qty'].forEach(id => {
+  $(id).addEventListener('input', recalc);
+});
+
+$('startDate').addEventListener('change', function() {
+  const newDate = this.value;
+  if (!newDate || stages.length === 0) return;
+
+  const newMonth = newDate.substring(0, 7);
+  const firstStageMonth = stages[0].month;
+  const diff = diffMonths(firstStageMonth, newMonth);
+
+  if (diff !== 0) {
+    stages.forEach(s => {
+      s.month = addMonths(s.month, diff);
+    });
+    buildStageRows();
+    recalc();
+  }
+});
+
+/* ==================== 初始化 ==================== */
+stages = generateDefaultStages(DEFAULT_START);
+tagLocked = false;
+buildStageRows();
+recalc();
+</script>
+</body>
+</html>

@@ -272,28 +272,42 @@
     .hl-book{font-size:.98em; padding:2px 9px}
   }
 
-  /* 页脚版权声明 */
-  .footer-copyright {
+  /* ========== 页脚版权声明（按图片修改） ========== */
+  .footer {
     grid-column: 1 / -1;
-    text-align: center;
-    padding: 20px;
-    margin-top: 20px;
+    background-color: #000000;
+    padding: 15px 30px;
+    color: #eab308;
+    border-top: 1px solid var(--line);
     font-size: 0.8rem;
-    color: #64748b;
-    border-top: 1px dashed var(--line);
+    line-height: 1.6;
+    text-align: left;
+    margin-top: 20px;
+    border-radius: 8px;
   }
-  .footer-copyright span {
-    color: #f59e0b;
+  .footer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .footer-content {
+    text-align: justify;
+  }
+  .footer-content p {
+    margin-bottom: 6px;
+  }
+  .footer-content p:last-child {
+    margin-bottom: 0;
   }
 </style>
 </head>
 <body>
 <div class="wrap">
-
-<img src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgaryzeng-7.github.io%2FForecasting-Linmenglong-%2FStock.html&label=&icon=123&color=%23cfe2ff&message=&style=flat&tz=UTC">
-@林梦龙 《供应链库存与计划管理》后记 ：Be Water, My friend!
-
 
   <!-- ==================== 左侧 ==================== -->
   <aside>
@@ -377,10 +391,17 @@
     </div>
   </main>
 
-  <!-- 页脚版权声明 -->
-  <div class="footer-copyright">
-    版权所有 © 2024 <span>林梦龙</span>. 保留所有权利。未经授权，禁止商用及二次分发。侵权必究。
-  </div>
+  <!-- ========== 页脚版权声明（按图片修改） ========== -->
+  <footer class="footer">
+    <div class="footer-header">
+      <span>© 2024 林梦龙-安全库存智能计算器 版权所有，侵权必究</span>
+      <span>FPI: 4C4D-535348-32303234-4C696E7A</span>
+    </div>
+    <div class="footer-content">
+      <p>【免责声明】本工具为库存计算辅助工具，所有分类识别结果与结论仅供参考，不构成任何采购、库存、资金或商业决策建议。使用者应自行评估数据质量、分类模型适用性，因使用本工具及其结果所产生的一切直接或间接后果，均由使用者自行承担。</p>
+      <p>【版权声明】本软件的源代码、分类识别算法、分类逻辑、界面设计、图表渲染代码及文档资料均受《中华人民共和国著作权法》及相关国际公约保护。著作权归 林梦龙 所有。未经著作权人书面授权，禁止以任何形式复制、修改、反编译、分发、转售、出租或用于任何商业用途。如有侵权，权利人将依法追究其民事和刑事责任。</p>
+    </div>
+  </footer>
 </div>
 
 <script>
