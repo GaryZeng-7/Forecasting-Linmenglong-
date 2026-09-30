@@ -67,6 +67,20 @@
             color: var(--text-muted);
         }
 
+        /* ========== 左上角点击统计 ========== */
+        .hit-counter {
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 6px;
+            line-height: 0;
+        }
+        .hit-counter img {
+            height: 20px;
+            width: auto;
+            display: block;
+            border-radius: 3px;
+        }
+
         .sidebar {
             background: var(--panel-bg);
             padding: 20px;
@@ -330,6 +344,13 @@
 <div class="container">
     <header>
         <div>
+            <!-- ========== 左上角点击统计 ========== -->
+            <div class="hit-counter">
+                <img src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgaryzeng-7.github.io%2FForecasting-Linmenglong-%2F&label=&icon=alarm-fill&color=%236ea8fe&message=&style=flat&tz=UTC"
+                     alt="访问统计"
+                     loading="lazy"
+                     referrerpolicy="no-referrer">
+            </div>
             <h1>时间序列预测与需求分析工作台</h1>
             <div class="subtitle">时间序列预测平台 By 林梦龙</div>
         </div>
