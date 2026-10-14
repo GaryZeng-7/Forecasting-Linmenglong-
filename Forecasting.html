@@ -107,6 +107,7 @@
         }
         /* ====================================== */
 
+        /* ============ 侧边栏：跟随浏览器整体滚动（不再自身内部滚动） ============ */
         .sidebar {
             background: var(--panel-bg);
             padding: 20px;
@@ -115,9 +116,9 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
-            max-height: calc(100vh - 120px);
-            overflow-y: auto;
+            align-self: start; /* grid 子项按内容高度，不被拉伸 */
         }
+        /* ======================================================================= */
 
         .main-content {
             display: flex;
@@ -429,12 +430,22 @@
             letter-spacing: 0.5px;
         }
         /* ============================================ */
+
+        /* ============ 响应式 ============ */
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                align-self: stretch;
+            }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- ========== 广告横幅（新增） ========== -->
+    <!-- ========== 广告横幅 ========== -->
     <div class="ad-banner">
         所有方法，请通过公众号 林梦龙 ，购买书籍 《供应链库存与计划管理》 以及订阅 《AI穿透供应链：从需求预测到资金回笼的智能博弈》 均可了解
     </div>
@@ -442,7 +453,7 @@
 
     <header>
         <div>
-            <!-- ========== 点击记录（左上角，已更新链接） ========== -->
+            <!-- ========== 点击记录（左上角） ========== -->
             <div class="hit-counter">
                 <img src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgaryzeng-7.github.io%2FForecasting-Linmenglong-%2FForecasting.html&label=&icon=alarm&color=%233d8bfd&message=&style=flat&tz=UTC" alt="访问统计">
             </div>
