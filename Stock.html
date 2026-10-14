@@ -80,6 +80,26 @@
   .brand{font-size:18px;font-weight:700;letter-spacing:.01em;margin-bottom:6px;color:#ffffff;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .hint{color:var(--mut);font-size:12.5px;margin:0 0 14px;line-height:1.5}
 
+  /* ========== 点击记录（左上角） ========== */
+  .hit-counter{
+    display:inline-block;
+    line-height:0;
+    margin-bottom:10px;
+    border-radius:4px;
+    overflow:hidden;
+    opacity:0.95;
+    transition:opacity .2s;
+  }
+  .hit-counter:hover{opacity:1}
+  .hit-counter img{
+    display:block;
+    height:20px;
+    width:auto;
+    max-width:100%;
+    border-radius:4px;
+  }
+  /* ====================================== */
+
   .drop{
     display:flex;align-items:center;justify-content:center;height:86px;
     border:1.5px dashed var(--input-border);border-radius:8px;cursor:pointer;
@@ -348,6 +368,11 @@
   <!-- ==================== 左侧 ==================== -->
   <aside>
     <div class="card">
+      <!-- ========== 点击记录（左上角） ========== -->
+      <div class="hit-counter">
+        <img src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgaryzeng-7.github.io%2FForecasting-Linmenglong-%2FStock.html&label=&icon=alarm-fill&color=%236ea8fe&message=&style=flat&tz=UTC" alt="访问统计">
+      </div>
+      <!-- ===================================== -->
       <div class="brand">📦 安全库存智能计算器 By 林梦龙
         <span class="visible-seal" style="font-size:11px;padding:2px 8px;">🔒 正版授权</span>
       </div>
@@ -451,7 +476,7 @@
    0. 作者签名 / 防篡改标识
    版权归 林梦龙 所有，请勿删除本段标识
    ================================================================== */
-const _0xLM_SIG_2024 = "\u6797\u68A6\u9f99\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B"; // 林梦龙 + 19个零宽空格
+const _0xLM_SIG_2024 = "\u6797\u68a6\u9f99\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B"; // 林梦龙 + 19个零宽空格
 const _0xLM_FP = "LM-SSC-4C4D-2024";
 
 /* ==================================================================
@@ -1249,7 +1274,7 @@ function render(){
     evt:'极值理论（厚尾）', gamma:'伽马分布', robust:'分布鲁棒'
   }[rec];
 
-  /* ============ 修改点：结果表用「建议补货量」替代「公式与参数」 ============ */
+  /* ============ 结果表用「建议补货量」替代「公式与参数」 ============ */
   const resRows = active.map(m=>{
     const r = R[m.id]; if(!r) return '';
     const ss = r.q - muLT;
