@@ -46,6 +46,22 @@
             gap: 20px;
         }
 
+        /* ========== 广告横幅 ========== */
+        .ad-banner {
+            grid-column: 1 / -1;
+            background: linear-gradient(90deg, #6d28d9, #4c1d95);
+            border-radius: 8px;
+            padding: 15px 20px;
+            color: #f0e6ff;
+            font-size: 14px;
+            text-align: center;
+            border: 1px solid #8b5cf6;
+            box-shadow: 0 4px 12px rgba(109, 40, 217, 0.3);
+            font-weight: 500;
+            line-height: 1.6;
+        }
+        /* =============================== */
+
         header {
             grid-column: 1 / -1;
             background: var(--panel-bg);
@@ -70,6 +86,26 @@
             font-size: 0.85rem;
             color: var(--text-muted);
         }
+
+        /* ========== 点击记录（左上角） ========== */
+        .hit-counter {
+            display: inline-block;
+            line-height: 0;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            opacity: 0.95;
+            transition: opacity 0.2s;
+        }
+        .hit-counter:hover { opacity: 1; }
+        .hit-counter img {
+            display: block;
+            height: 20px;
+            width: auto;
+            max-width: 100%;
+            border-radius: 4px;
+        }
+        /* ====================================== */
 
         .sidebar {
             background: var(--panel-bg);
@@ -398,8 +434,19 @@
 <body>
 
 <div class="container">
+    <!-- ========== 广告横幅（新增） ========== -->
+    <div class="ad-banner">
+        所有方法，请通过公众号 林梦龙 ，购买书籍 《供应链库存与计划管理》 以及订阅 《AI穿透供应链：从需求预测到资金回笼的智能博弈》 均可了解
+    </div>
+    <!-- ===================================== -->
+
     <header>
         <div>
+            <!-- ========== 点击记录（左上角，已更新链接） ========== -->
+            <div class="hit-counter">
+                <img src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgaryzeng-7.github.io%2FForecasting-Linmenglong-%2FForecasting.html&label=&icon=alarm&color=%233d8bfd&message=&style=flat&tz=UTC" alt="访问统计">
+            </div>
+            <!-- ===================================== -->
             <h1>时间序列预测平台 By 林梦龙</h1>
             <div class="subtitle">支持多需求列独立预测 | 自动参数调优 | 间歇性需求智能识别 | 数据清洗 (含补齐时间轴与去重)</div>
         </div>
