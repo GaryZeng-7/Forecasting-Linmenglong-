@@ -1,0 +1,2227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ================= 版权与权利声明（法律维权依据） ================= -->
+    <meta name="copyright" content="Copyright © 2024 林梦龙. All Rights Reserved. 侵权必究">
+    <meta name="author" content="林梦龙">
+    <meta name="designer" content="林梦龙">
+    <meta name="creator" content="林梦龙">
+    <meta name="rights" content="本平台源代码、算法模型、界面设计及图表渲染逻辑的著作权归 林梦龙 所有，未经授权禁止复制、修改、分发、倒卖或商业使用">
+    <meta name="generator" content="LM-TSForecast-Platform v1.0 (林梦龙)">
+    <meta name="dc.rights" content="林梦龙">
+    <!-- ================================================================= -->
+    <title>时间序列预测平台 @林梦龙</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --bg-dark: #0f172a;
+            --panel-bg: #1e293b;
+            --border-color: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-green: #10b981;
+            --accent-gold: #f59e0b;
+            --accent-purple: #8b5cf6;
+            --accent-red: #ef4444;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1650px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 20px;
+        }
+
+        header {
+            grid-column: 1 / -1;
+            background: var(--panel-bg);
+            padding: 15px 25px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            color: #60a5fa;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .sidebar {
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        input, select, button {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        select[multiple] {
+            height: 90px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-btn {
+            background: #2563eb;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .file-upload-btn:hover {
+            background: #1d4ed8;
+        }
+
+        button.action-btn {
+            background: var(--accent-green);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            padding: 12px;
+            margin-top: 5px;
+            border-radius: 6px;
+        }
+
+        button.action-btn:hover {
+            opacity: 0.9;
+        }
+
+        button.opt-btn {
+            background: var(--accent-purple);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            transition: 0.2s;
+        }
+
+        button.opt-btn:hover {
+            opacity: 0.9;
+        }
+        
+        button.opt-btn:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .tabs-container {
+            display: flex;
+            gap: 10px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: #0f172a;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--primary-light);
+            color: #ffffff;
+            border-color: var(--primary-light);
+        }
+
+        .selected-model-banner {
+            background: linear-gradient(90deg, #1e1b4b, #311b92);
+            border: 1px solid var(--accent-purple);
+            border-radius: 6px;
+            padding: 12px 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .banner-title { font-size: 0.85rem; color: #c4b5fd; font-weight: bold; }
+        .banner-info { font-size: 1.1rem; color: #ffffff; font-weight: bold; }
+        .banner-param {
+            background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px;
+            font-family: monospace; font-size: 0.95rem; color: #fef08a; margin-left: 8px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .metric-card {
+            background: #0f172a; padding: 15px; border-radius: 6px;
+            border: 1px solid var(--border-color); position: relative;
+        }
+
+        .metric-title { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; }
+        .metric-value { font-size: 1.4rem; font-weight: bold; margin: 5px 0; color: #38bdf8; }
+        
+        .best-badge {
+            font-size: 0.75rem; background: #1e3a8a; color: #93c5fd; padding: 4px 8px;
+            border-radius: 4px; display: block; margin-top: 6px; border: 1px solid #3b82f6;
+            line-height: 1.3; word-break: break-all;
+        }
+
+        /* 诊断卡片 */
+        .diagnostic-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .diag-card {
+            background: #0f172a; border-radius: 6px; padding: 15px;
+            border-left: 4px solid var(--accent-gold);
+        }
+        .diag-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .diag-title { font-weight: bold; color: #f8fafc; }
+        .diag-category { font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; font-weight: bold; }
+        
+        .cat-smooth { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; }
+        .cat-erratic { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid #f59e0b; }
+        .cat-intermittent { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; border: 1px solid #8b5cf6; }
+        .cat-lumpy { background: rgba(236, 72, 153, 0.2); color: #ec4899; border: 1px solid #ec4899; }
+
+        .diag-detail { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+        .diag-detail span { color: #f8fafc; font-weight: bold; }
+
+        /* 清洗详情表格 */
+        .clean-detail-table-container {
+            max-height: 250px;
+            overflow-y: auto;
+            margin-top: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+        .clean-detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .clean-detail-table th, .clean-detail-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: left;
+        }
+        .clean-detail-table th {
+            background: #1e293b;
+            color: var(--text-muted);
+            position: sticky;
+            top: 0;
+        }
+        .clean-detail-table tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .action-tag {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .action-missing { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .action-outlier { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .action-negative { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .action-duplicate { background: rgba(139, 92, 246, 0.2); color: #c4b5fd; }
+        .action-newrow { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+
+        .chart-container { position: relative; height: 400px; width: 100%; margin-bottom: 30px; }
+        .chart-title {
+            color: #f8fafc; margin: 0 0 10px 0; font-size: 1.1rem;
+            font-weight: 600; padding-left: 10px; border-left: 4px solid var(--primary-light);
+        }
+
+        .table-container { max-height: 350px; overflow-y: auto; margin-bottom: 30px; }
+        .table-title-sub {
+            margin-top: 0; margin-bottom: 10px; color: #60a5fa; font-size: 1rem;
+            padding-left: 10px; border-left: 4px solid var(--accent-green);
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
+        th, td { padding: 10px; border-bottom: 1px solid var(--border-color); }
+        th {
+            background: #0f172a; color: var(--text-muted);
+            position: sticky; top: 0; z-index: 10;
+        }
+        tr:hover { background: #334155; }
+
+        .params-block {
+            border-left: 3px solid var(--primary-light); padding-left: 10px;
+            margin-top: 10px; display: flex; flex-direction: column; gap: 10px;
+        }
+        .opt-block {
+            border-left: 3px solid var(--accent-purple); padding-left: 10px;
+            margin-top: 5px; display: flex; flex-direction: column; gap: 8px;
+        }
+        .clean-block {
+            border-left: 3px solid var(--accent-gold); padding-left: 10px;
+            margin-top: 5px; display: flex; flex-direction: column; gap: 8px;
+        }
+        .clean-header {
+            display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 5px;
+        }
+        .clean-header input[type="checkbox"] {
+            width: auto; margin: 0; cursor: pointer;
+        }
+
+        /* ============ 版权与免责声明样式 ============ */
+        .footer-legal {
+            grid-column: 1 / -1;
+            background: var(--panel-bg);
+            padding: 18px 25px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--accent-gold);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.75;
+        }
+        .footer-legal .copyright-line {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 18px;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .footer-legal .copyright-strong {
+            color: #f59e0b;
+            font-weight: bold;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+        }
+        .footer-legal .legal-title {
+            color: #60a5fa;
+            font-weight: bold;
+            margin-right: 6px;
+        }
+        .fingerprint {
+            font-family: "Consolas", "Courier New", monospace;
+            color: #2b3a4f;
+            font-size: 0.68rem;
+            user-select: none;
+            letter-spacing: 0.4px;
+        }
+        .visible-seal {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px dashed rgba(245, 158, 11, 0.5);
+            color: #f59e0b;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.72rem;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+        /* ============================================ */
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>时间序列预测平台 By 林梦龙</h1>
+            <div class="subtitle">支持多需求列独立预测 | 自动参数调优 | 间歇性需求智能识别 | 数据清洗 (含补齐时间轴与去重)</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+            <span class="visible-seal">🔒 正版授权 · 林梦龙</span>
+            <button onclick="loadSampleData('multi')" style="margin-right:8px;">加载多产品需求示例</button>
+            <button onclick="loadSampleData('intermittent')">加载间歇需求示例</button>
+        </div>
+    </header>
+
+    <div class="sidebar">
+        <div class="form-group">
+            <label>1. 数据导入与多产品映射</label>
+            <label for="csv-file" class="file-upload-btn">上传 CSV / Excel 文件</label>
+            <input type="file" id="csv-file" accept=".csv, .xlsx, .xls">
+            <span id="file-name" class="subtitle">未选择文件</span>
+        </div>
+
+        <div class="form-group">
+            <label for="time-col">时间列</label>
+            <select id="time-col"></select>
+        </div>
+
+        <div class="form-group">
+            <label for="val-col">数值/需求列 (按住 Ctrl / Cmd 可多选多个产品)</label>
+            <select id="val-col" multiple></select>
+        </div>
+
+        <hr style="border-color: var(--border-color); width: 100%;">
+
+        <!-- 数据清洗配置 -->
+        <div class="form-group">
+            <label style="color: #f59e0b;">2. 数据清洗与预处理</label>
+            <div class="clean-block">
+                <label class="clean-header">
+                    <input type="checkbox" id="enable-cleaning" checked onchange="runAnalysis()">
+                    <span style="color: #f8fafc; font-weight: bold;">启用数据清洗 (若取消则使用原始数据)</span>
+                </label>
+
+                <label for="duplicate-handler">重复时间行处理 (同一时间多条记录):</label>
+                <select id="duplicate-handler">
+                    <option value="mean" selected>取平均值</option>
+                    <option value="sum">求和</option>
+                    <option value="first">保留第一条</option>
+                    <option value="last">保留最后一条</option>
+                </select>
+
+                <label for="missing-handler">缺失值/缺行处理 (补齐时间轴后):</label>
+                <select id="missing-handler" onchange="toggleCustomMissingInput()">
+                    <option value="none">不处理 (保留为空, 可能导致预测报错)</option>
+                    <option value="linear" selected>线性插值</option>
+                    <option value="neighbor_mean">前后均值填充</option>
+                    <option value="locf">前向填充 (LOCF) -> 若前面没有则找后一个</option>
+                    <option value="mean">均值填充</option>
+                    <option value="custom">自定义固定值填充</option>
+                </select>
+                
+                <!-- 自定义固定值输入框（默认隐藏） -->
+                <div id="custom-missing-container" style="display: none; margin-top: 5px;">
+                    <label for="custom-missing-value" style="font-size: 0.8rem;">自定义填充数值:</label>
+                    <input type="number" id="custom-missing-value" value="0" step="any" style="width: 100%; box-sizing: border-box;">
+                </div>
+
+                <label for="outlier-handler">异常值处理:</label>
+                <select id="outlier-handler">
+                    <option value="none">不处理</option>
+                    <option value="iqr" selected>IQR 盖帽法 (1.5倍)</option>
+                    <option value="3sigma">3-Sigma 盖帽法</option>
+                </select>
+
+                <label for="negative-handler">负值处理:</label>
+                <select id="negative-handler">
+                    <option value="keep">保留 (可能为退货)</option>
+                    <option value="zero" selected>转换为 0</option>
+                    <option value="abs">取绝对值</option>
+                </select>
+            </div>
+        </div>
+
+        <hr style="border-color: var(--border-color); width: 100%;">
+
+        <div class="form-group">
+            <label>3. 训练/验证集划分比例</label>
+            <label>训练期数比例: <span id="v-split">80%</span></label>
+            <input type="range" id="train-split" min="50" max="95" value="80" step="5" oninput="document.getElementById('v-split').innerText=this.value+'%'">
+            <span class="subtitle">前 <span id="train-count-tip">80%</span> 数据用于训练拟合，剩余用于计算验证误差。</span>
+        </div>
+
+        <hr style="border-color: var(--border-color); width: 100%;">
+
+        <div class="form-group">
+            <label style="color: #a78bfa;">4. 智能模型自动选优 (含参数调优)</label>
+            <div class="opt-block">
+                <label for="best-metric-select">优化目标指标:</label>
+                <select id="best-metric-select">
+                    <option value="mape">MAPE (平均绝对百分比误差) </option>
+                    <option value="mae">MAE (平均绝对误差)</option>
+                    <option value="rmse">RMSE (均方根误差)</option>
+                    <option value="mse">MSE (均方误差)</option>
+                    <option value="smape">sMAPE (对称百分比误差)</option>
+                    <option value="wmape">WMAPE (加权百分比误差)</option>
+                </select>
+                
+                <label for="auto-periods">季节周期候选值 (逗号分隔):</label>
+                <input type="text" id="auto-periods" value="4,12" placeholder="例如: 4,12 或 7">
+                <span class="subtitle">针对 Holt-Winters 和 SARIMA 模型，系统会在此列表中寻找最优周期。</span>
+
+                <button class="opt-btn" id="auto-tune-btn" onclick="applyBestModelByMetric()" style="margin-top: 5px;">自动寻找并应用最佳模型与参数</button>
+            </div>
+        </div>
+
+        <hr style="border-color: var(--border-color); width: 100%;">
+
+        <div class="form-group">
+            <label for="model-select">5. 手动模型选择与微调</label>
+            <select id="model-select" onchange="toggleParamPanels()">
+                <optgroup label="基础/常规时间序列">
+                    <option value="naive">朴素预测 (Naive)</option>
+                    <option value="sma">简单移动平均 (SMA)</option>
+                    <option value="wma">加权移动平均 (WMA)</option>
+                    <option value="ses">单指数平滑 (SES)</option>
+                    <option value="des">双指数平滑 (Holt's)</option>
+                    <option value="tes">三指数平滑 (Holt-Winters)</option>
+                </optgroup>
+                <optgroup label="高阶/平稳时序模型">
+                    <option value="arma">ARMA 模型</option>
+                    <option value="arima">ARIMA 模型</option>
+                    <option value="sarima">SARIMA 季节性模型</option>
+                    <option value="sarimax">SARIMAX 扩展模型</option>
+                </optgroup>
+                <optgroup label="间歇性需求模型 (Croston)" id="croston-group">
+                    <option value="croston_orig">原始克罗斯顿法 (Croston)</option>
+                    <option value="croston_sba">克罗斯顿 SBA 法 (Syntetos-Boylan)</option>
+                    <option value="croston_sbj">克罗斯顿 SBJ 法</option>
+                    <option value="croston_tsb">克罗斯顿 TSB 法 (Teunter-Syntetos-Babai)</option>
+                </optgroup>
+            </select>
+            <span class="subtitle" id="croston-warning" style="color: #f59e0b; display: none;">⚠️ 当前选择的需求非间歇性，使用 Croston 可能导致预测偏差。</span>
+        </div>
+
+        <div id="params-container" class="params-block">
+            <div class="form-group param-item" id="p-window">
+                <label>窗口大小 (N): <span id="v-window">3</span></label>
+                <input type="range" id="param-window" min="1" max="24" value="3" oninput="document.getElementById('v-window').innerText=this.value">
+            </div>
+            <div class="form-group param-item" id="p-alpha">
+                <label>平滑常数 Alpha (α): <span id="v-alpha">0.2</span></label>
+                <input type="range" id="param-alpha" min="0.01" max="0.99" step="0.01" value="0.2" oninput="document.getElementById('v-alpha').innerText=this.value">
+            </div>
+            <div class="form-group param-item" id="p-beta">
+                <label>趋势常数 Beta (β): <span id="v-beta">0.1</span></label>
+                <input type="range" id="param-beta" min="0.01" max="0.99" step="0.01" value="0.1" oninput="document.getElementById('v-beta').innerText=this.value">
+            </div>
+            <div class="form-group param-item" id="p-gamma">
+                <label>季节常数 Gamma (γ): <span id="v-gamma">0.1</span></label>
+                <input type="range" id="param-gamma" min="0.01" max="0.99" step="0.01" value="0.1" oninput="document.getElementById('v-gamma').innerText=this.value">
+            </div>
+            <div class="form-group param-item" id="p-period">
+                <label>季节周期 (s):</label>
+                <input type="number" id="param-period" value="12" min="2">
+            </div>
+            <div class="form-group param-item" id="p-orders">
+                <label>p (AR 阶数):</label><input type="number" id="param-p" value="1" min="0" max="5">
+                <label>d (差分阶数):</label><input type="number" id="param-d" value="1" min="0" max="2">
+                <label>q (MA 阶数):</label><input type="number" id="param-q" value="1" min="0" max="5">
+            </div>
+            <div class="form-group param-item" id="p-sorders">
+                <label>P (季节性 AR):</label><input type="number" id="param-sp" value="1" min="0" max="2">
+                <label>D (季节性差分):</label><input type="number" id="param-sd" value="1" min="0" max="1">
+                <label>Q (季节性 MA):</label><input type="number" id="param-sq" value="1" min="0" max="2">
+            </div>
+        </div>
+
+        <hr style="border-color: var(--border-color); width: 100%;">
+
+        <div class="form-group">
+            <label>6. 预测期数与置信度设置</label>
+            <label>要预测的未来期数 (Forecast Horizon): <span id="v-horizon">6</span></label>
+            <input type="range" id="forecast-horizon" min="1" max="24" value="6" oninput="document.getElementById('v-horizon').innerText=this.value">
+        </div>
+
+        <div class="form-group">
+            <label>置信区间级别 (Confidence Interval):</label>
+            <select id="ci-level">
+                <option value="0.80">80%</option>
+                <option value="0.90">90%</option>
+                <option value="0.95" selected>95% (默认)</option>
+                <option value="0.99">99%</option>
+            </select>
+        </div>
+
+        <button class="action-btn" onclick="runAnalysis()">运行预测分析</button>
+    </div>
+
+    <div class="main-content">
+        <div class="tabs-container" id="product-tabs"></div>
+
+        <div class="selected-model-banner" id="model-banner">
+            <div>
+                <div class="banner-title">当前应用预测模型与参数设定</div>
+                <div class="banner-info" id="banner-model-text">正在评估模型...</div>
+            </div>
+            <div style="text-align: right;">
+                <span class="subtitle">优化目标: </span>
+                <span id="banner-target-metric" style="color:#a78bfa; font-weight:bold;">MAPE</span>
+            </div>
+        </div>
+
+        <!-- 数据清洗报告 -->
+        <div class="card" style="padding: 15px 20px; border-left: 4px solid var(--accent-gold);">
+            <h3 style="margin-top:0; margin-bottom:15px; font-size:1rem; color:var(--text-muted);">
+                数据清洗诊断报告
+            </h3>
+            <div class="diagnostic-container" id="cleaning-report-container">
+                <span class="subtitle">等待数据载入...</span>
+            </div>
+            <div id="cleaning-detail-container" style="display: none;">
+                <h4 style="margin: 10px 0 10px 0; font-size: 0.9rem; color: #60a5fa;">具体修改明细：</h4>
+                <div class="clean-detail-table-container">
+                    <table class="clean-detail-table" id="cleaning-detail-table">
+                        <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>字段/产品</th>
+                                <th>操作类型</th>
+                                <th>修改前</th>
+                                <th>修改后</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 需求特性诊断 -->
+        <div class="card" style="padding: 15px 20px;">
+            <h3 style="margin-top:0; margin-bottom:15px; font-size:1rem; color:var(--text-muted);">
+                需求特性诊断 (基于 ADI 与 CV²)
+            </h3>
+            <div class="diagnostic-container" id="diagnostic-container"></div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-top:0; margin-bottom:15px; font-size:1rem; color:var(--text-muted);">
+                验证集评估误差 (基于后 <span id="val-count-tip">20%</span> 验证期数) & 全模型选优诊断
+            </h3>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-title">MAE (平均绝对误差)</div>
+                    <div class="metric-value" id="m-mae">-</div>
+                    <div class="best-badge" id="best-mae">最佳: -</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">RMSE (均方根误差)</div>
+                    <div class="metric-value" id="m-rmse">-</div>
+                    <div class="best-badge" id="best-rmse">最佳: -</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">MAPE (平均绝对百分比误差)</div>
+                    <div class="metric-value" id="m-mape">-</div>
+                    <div class="best-badge" id="best-mape">最佳: -</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">MSE (均方误差)</div>
+                    <div class="metric-value" id="m-mse">-</div>
+                    <div class="best-badge" id="best-mse">最佳: -</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">sMAPE (对称百分比误差)</div>
+                    <div class="metric-value" id="m-smape">-</div>
+                    <div class="best-badge" id="best-smape">最佳: -</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">WMAPE (加权百分比误差)</div>
+                    <div class="metric-value" id="m-wmape">-</div>
+                    <div class="best-badge" id="best-wmape">最佳: -</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div id="charts-container"></div>
+        </div>
+
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 style="margin:0; font-size:1rem; color:var(--text-muted);" id="table-title">多产品需求预测明细表</h3>
+                <button onclick="exportCSV()" style="font-size:0.8rem; cursor:pointer;">导出当前数据 CSV</button>
+            </div>
+            <div id="tables-container"></div>
+        </div>
+    </div>
+
+    <!-- ================= 版权与免责声明 ================= -->
+    <footer class="footer-legal">
+        <div class="copyright-line">
+            <div class="copyright-strong">© 2024 林梦龙 · 时间序列预测平台 · 版权所有，侵权必究</div>
+            <div class="fingerprint" title="作者数字指纹">FP: 4C4D-545346-32303234-4C696E4D656E674C6F6E67</div>
+        </div>
+        <div style="margin-top: 8px;">
+            <span class="legal-title">【免责声明】</span>
+            本平台为数据建模与分析辅助工具，所有预测结果、参数推荐、置信区间与诊断结论仅供参考，不构成任何投资、采购、库存或商业决策建议。使用者应自行评估数据质量与模型适用性，因使用本工具及其结果所产生的一切直接或间接后果，均由使用者自行承担。
+        </div>
+        <div style="margin-top: 6px;">
+            <span class="legal-title">【版权声明】</span>
+            本软件的源代码、算法实现、界面设计、图表渲染逻辑及文档资料均受《中华人民共和国著作权法》及相关国际公约保护，著作权归 <strong style="color:#f59e0b;">林梦龙</strong> 所有。未经著作权人书面授权，禁止以任何形式复制、修改、反编译、分发、转售、出租或用于任何商业用途。如有侵权，权利人将依法追究其民事及刑事责任。
+        </div>
+    </footer>
+</div>
+
+<script>
+    /* =====================================================================
+     *  时间序列预测平台
+     *  作者 / 著作权人: 林梦龙
+     *  Copyright © 2024 林梦龙. All Rights Reserved.
+     *  未经授权禁止复制、修改、分发、倒卖或商业使用。
+     * ===================================================================== */
+
+    /* --------- 内部构建签名（含作者数字指纹，请勿删除） --------- */
+    const _0xLM_SIG_2024 = "\u6797\u68a6\u9f99\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B"; // 林梦龙 + 19个零宽空格
+    const _0xLM_FP = "LM-TSFP-4C4D-2024";
+    /* --------------------------------------------------------- */
+
+    let rawData = [];
+    let cleanedData = []; 
+    let parsedTimes = [];
+    let forecastCharts = []; 
+    let globalMultiResults = [];
+    let activeProductIndex = 'all'; 
+    let currentCleaningLog = []; 
+
+    const sampleMulti = [
+        {"Date": "1", "产品A_Demand": 112, "产品B_Demand": 85}, {"Date": "2", "产品A_Demand": 118, "产品B_Demand": 90},
+        {"Date": "3", "产品A_Demand": 132, "产品B_Demand": 95}, {"Date": "4", "产品A_Demand": 129, "产品B_Demand": 100},
+        {"Date": "5", "产品A_Demand": 121, "产品B_Demand": 105}, {"Date": "6", "产品A_Demand": 135, "产品B_Demand": 110},
+        {"Date": "7", "产品A_Demand": 148, "产品B_Demand": 125}, {"Date": "8", "产品A_Demand": 148, "产品B_Demand": 130},
+        {"Date": "9", "产品A_Demand": 136, "产品B_Demand": 115}, {"Date": "10", "产品A_Demand": 119, "产品B_Demand": 105},
+        {"Date": "12", "产品A_Demand": 104, "产品B_Demand": 95},  {"Date": "13", "产品A_Demand": 118, "产品B_Demand": 100}
+    ];
+
+    const sampleIntermittent = [
+        {"Date": "T1", "零部件_Demand": 0}, {"Date": "T2", "零部件_Demand": 0}, {"Date": "T3", "零部件_Demand": 6},
+        {"Date": "T4", "零部件_Demand": 0}, {"Date": "T5", "零部件_Demand": 0}, {"Date": "T6", "零部件_Demand": 0},
+        {"Date": "T7", "零部件_Demand": 9}, {"Date": "T8", "零部件_Demand": 0}, {"Date": "T9", "零部件_Demand": 0},
+        {"Date": "T10", "零部件_Demand": 4}, {"Date": "T11", "零部件_Demand": 0}, {"Date": "T12", "零部件_Demand": 0},
+        {"Date": "T14", "零部件_Demand": 12}, {"Date": "T15", "零部件_Demand": 0},
+        {"Date": "T16", "零部件_Demand": 0}, {"Date": "T17", "零部件_Demand": 7}, {"Date": "T18", "零部件_Demand": 0},
+        {"Date": "T19", "零部件_Demand": 0}, {"Date": "T20", "零部件_Demand": 0}, {"Date": "T21", "零部件_Demand": 10},
+        {"Date": "T22", "零部件_Demand": 0}, {"Date": "T23", "零部件_Demand": 0}, {"Date": "T24", "零部件_Demand": 5}
+    ];
+
+    /* =====================================================================
+     *  图表渲染内部组件（渲染层水印，负责在每张图表上强制叠加作者签名）
+     *  ※ 内部模块：请勿删除或修改，否则图表将失去版权标识
+     * ===================================================================== */
+    const _0xLM_RenderUnit = {
+        id: 'lm_wm_' + (0x4C4D).toString(16),
+        afterDatasetsDraw: function (chart) {
+            try {
+                const ctx = chart.ctx;
+                const W = chart.width;
+                const H = chart.height;
+                ctx.save();
+
+                // 1) 右下角明水印
+                ctx.font = 'bold 12px "Segoe UI", Arial, sans-serif';
+                ctx.fillStyle = 'rgba(96, 165, 250, 0.62)';
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText('\u6C34\u5370: \u6797\u68A6\u9F99', W - 12, H - 8);
+
+                // 2) 中心斜向淡隐水印
+                ctx.globalAlpha = 0.055;
+                ctx.fillStyle = '#60a5fa';
+                ctx.translate(W / 2, H / 2);
+                ctx.rotate(-Math.PI / 8);
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = 'bold 58px "Segoe UI", Arial, sans-serif';
+                ctx.fillText('\u6797\u68A6\u9F99', 0, 0);
+                ctx.font = 'bold 16px "Segoe UI", Arial, sans-serif';
+                ctx.fillText('LM Analytics \u00B7 ' + _0xLM_FP, 0, 52);
+
+                ctx.restore();
+            } catch (e) { /* 静默保护 */ }
+        }
+    };
+    /* ===================================================================== */
+
+    window.onload = function() {
+        loadSampleData('multi');
+        toggleParamPanels();
+        toggleCustomMissingInput();
+    };
+
+    function loadSampleData(type) {
+        rawData = (type === 'multi') ? sampleMulti : sampleIntermittent;
+        document.getElementById('file-name').innerText = (type === 'multi') ? '内置: 双产品对比数据集(含缺行)' : '内置: 间歇性零部件数据集(含缺行)';
+        populateSelects();
+        runAnalysis();
+    }
+
+    document.getElementById('csv-file').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if(!file) return;
+        document.getElementById('file-name').innerText = file.name;
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            const data = new Uint8Array(evt.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            rawData = XLSX.utils.sheet_to_json(firstSheet);
+            populateSelects();
+            runAnalysis();
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    function populateSelects() {
+        if(rawData.length === 0) return;
+        const keys = Object.keys(rawData[0]);
+        const timeSelect = document.getElementById('time-col');
+        const valSelect = document.getElementById('val-col');
+
+        timeSelect.innerHTML = '';
+        valSelect.innerHTML = '';
+
+        keys.forEach(k => {
+            timeSelect.innerHTML += `<option value="${k}">${k}</option>`;
+            valSelect.innerHTML += `<option value="${k}">${k}</option>`;
+        });
+
+        if(keys.length > 1) {
+            timeSelect.value = keys[0];
+            for(let i = 1; i < valSelect.options.length; i++) {
+                valSelect.options[i].selected = true;
+            }
+        }
+    }
+
+    function toggleCustomMissingInput() {
+        const handler = document.getElementById('missing-handler').value;
+        const container = document.getElementById('custom-missing-container');
+        container.style.display = handler === 'custom' ? 'block' : 'none';
+    }
+
+    function toggleParamPanels() {
+        const model = document.getElementById('model-select').value;
+        document.querySelectorAll('.param-item').forEach(el => el.style.display = 'none');
+        
+        const warning = document.getElementById('croston-warning');
+        if (model.startsWith('croston_')) {
+            const selectedCols = Array.from(document.getElementById('val-col').selectedOptions).map(o => o.value);
+            let hasNonIntermittent = false;
+            selectedCols.forEach(col => {
+                const vals = cleanedData.map(r => parseFloat(r[col]) || 0);
+                const diag = calculateDemandClassification(vals);
+                if (diag.category !== 'intermittent' && diag.category !== 'lumpy') {
+                    hasNonIntermittent = true;
+                }
+            });
+            warning.style.display = hasNonIntermittent ? 'block' : 'none';
+        } else {
+            warning.style.display = 'none';
+        }
+
+        if(model === 'sma' || model === 'wma') {
+            document.getElementById('p-window').style.display = 'flex';
+        } else if(model === 'ses') {
+            document.getElementById('p-alpha').style.display = 'flex';
+        } else if(model === 'des') {
+            document.getElementById('p-alpha').style.display = 'flex';
+            document.getElementById('p-beta').style.display = 'flex';
+        } else if(model === 'tes') {
+            document.getElementById('p-alpha').style.display = 'flex';
+            document.getElementById('p-beta').style.display = 'flex';
+            document.getElementById('p-gamma').style.display = 'flex';
+            document.getElementById('p-period').style.display = 'flex';
+        } else if(model === 'arma' || model === 'arima') {
+            document.getElementById('p-orders').style.display = 'flex';
+        } else if(model === 'sarima' || model === 'sarimax') {
+            document.getElementById('p-orders').style.display = 'flex';
+            document.getElementById('p-sorders').style.display = 'flex';
+            document.getElementById('p-period').style.display = 'flex';
+        } else if(model.startsWith('croston_')) {
+            document.getElementById('p-alpha').style.display = 'flex';
+            if(model === 'croston_tsb') {
+                document.getElementById('p-beta').style.display = 'flex';
+            }
+        }
+    }
+
+    function getZValue(ci) {
+        switch(parseFloat(ci)) {
+            case 0.80: return 1.282;
+            case 0.90: return 1.645;
+            case 0.95: return 1.960;
+            case 0.99: return 2.576;
+            default: return 1.960;
+        }
+    }
+
+    // ==========================================
+    // 核心修复：重写时间解析与补齐逻辑
+    // ==========================================
+    function cleanData(data, timeCol, valCols) {
+        const missingHandler = document.getElementById('missing-handler').value;
+        const outlierHandler = document.getElementById('outlier-handler').value;
+        const negativeHandler = document.getElementById('negative-handler').value;
+        const duplicateHandler = document.getElementById('duplicate-handler').value;
+        const customMissingValue = parseFloat(document.getElementById('custom-missing-value').value) || 0;
+
+        currentCleaningLog = [];
+
+        // 1. 解析时间格式（支持标准日期、纯数字、前缀数字如T1）
+        let parsedItems = data.map((row, idx) => {
+            let rawTime = String(row[timeCol]).trim();
+            let timeKey = rawTime;
+            let type = 'unknown'; // 'date', 'numeric', 'prefixed'
+            let prefix = '';
+            let num = null;
+            let year, month, sortKey;
+
+            // 尝试匹配 YYYY-MM
+            let dateMatch = rawTime.match(/^(\d{4})[-/](\d{1,2})([-/](\d{1,2}))?/);
+            if (dateMatch) {
+                type = 'date';
+                year = parseInt(dateMatch[1]);
+                month = parseInt(dateMatch[2]);
+                timeKey = `${year}-${String(month).padStart(2, '0')}`;
+                sortKey = year * 100 + month;
+            } else {
+                // 尝试匹配带前缀的数字 (如 T1, W10, 或者纯数字 10)
+                let prefMatch = rawTime.match(/^([A-Za-z_]*)(\d+)$/);
+                if (prefMatch) {
+                    type = 'prefixed';
+                    prefix = prefMatch[1];
+                    num = parseInt(prefMatch[2]);
+                    timeKey = `${prefix}${num}`;
+                    sortKey = num;
+                } else {
+                    // 无法解析，按原顺序
+                    type = 'unknown';
+                    sortKey = idx;
+                }
+            }
+            return { rawTime, timeKey, type, prefix, num, year, month, sortKey, originalIndex: idx };
+        });
+
+        // 2. 排序
+        parsedItems.sort((a, b) => {
+            if (a.type === 'date' && b.type === 'date') {
+                return a.sortKey - b.sortKey;
+            }
+            if (a.type === 'prefixed' && b.type === 'prefixed' && a.prefix === b.prefix) {
+                return a.num - b.num;
+            }
+            return a.originalIndex - b.originalIndex; 
+        });
+
+        // 3. 生成时间映射并处理重复行
+        let uniqueTimeKeys = [];
+        let timeMap = {}; 
+
+        parsedItems.forEach(item => {
+            if (!timeMap[item.timeKey]) {
+                timeMap[item.timeKey] = { values: {}, rawTime: item.rawTime, type: item.type, prefix: item.prefix, num: item.num, year: item.year, month: item.month };
+                uniqueTimeKeys.push(item.timeKey);
+            }
+            valCols.forEach(col => {
+                if (!timeMap[item.timeKey].values[col]) timeMap[item.timeKey].values[col] = [];
+                let v = data[item.originalIndex][col];
+                if (v === null || v === undefined || v === '' || (typeof v === 'string' && v.trim() === '')) v = null;
+                timeMap[item.timeKey].values[col].push(v);
+            });
+        });
+
+        let aggregatedData = {}; 
+        let logTemp = {}; 
+
+        valCols.forEach(col => {
+            logTemp[col] = { duplicated: 0, missingFilled: 0, outliersCapped: 0, negativesFixed: 0, missingRows: 0, details: [] };
+        });
+
+        uniqueTimeKeys.forEach(timeKey => {
+            const tData = timeMap[timeKey];
+            aggregatedData[timeKey] = { values: {}, rawTime: tData.rawTime, type: tData.type, prefix: tData.prefix, num: tData.num, year: tData.year, month: tData.month };
+
+            valCols.forEach(col => {
+                const rawVals = tData.values[col].filter(v => v !== null);
+                if (tData.values[col].length > 1) {
+                    logTemp[col].duplicated += (tData.values[col].length - 1);
+                    logTemp[col].details.push({
+                        time: tData.rawTime,
+                        field: col,
+                        action: '重复时间行合并',
+                        before: `存在 ${tData.values[col].length} 条记录`,
+                        after: '已合并为 1 条',
+                        actionClass: 'action-duplicate'
+                    });
+                }
+                if (rawVals.length === 0) {
+                    aggregatedData[timeKey].values[col] = null; 
+                } else {
+                    if (duplicateHandler === 'mean') {
+                        aggregatedData[timeKey].values[col] = rawVals.reduce((a, b) => a + b, 0) / rawVals.length;
+                    } else if (duplicateHandler === 'sum') {
+                        aggregatedData[timeKey].values[col] = rawVals.reduce((a, b) => a + b, 0);
+                    } else if (duplicateHandler === 'first') {
+                        aggregatedData[timeKey].values[col] = rawVals[0];
+                    } else if (duplicateHandler === 'last') {
+                        aggregatedData[timeKey].values[col] = rawVals[rawVals.length - 1];
+                    }
+                }
+            });
+        });
+
+        // 4. 根据不同类型补全缺失的时间轴
+        let finalTimeKeys = [];
+        let firstItem = timeMap[uniqueTimeKeys[0]];
+        let lastItem = timeMap[uniqueTimeKeys[uniqueTimeKeys.length - 1]];
+        
+        if (firstItem && lastItem) {
+            if (firstItem.type === 'date') {
+                // 按年月补齐
+                let currentY = firstItem.year, currentM = firstItem.month;
+                let endY = lastItem.year, endM = lastItem.month;
+
+                while (currentY < endY || (currentY === endY && currentM <= endM)) {
+                    let key = `${currentY}-${String(currentM).padStart(2, '0')}`;
+                    finalTimeKeys.push(key);
+
+                    if (!aggregatedData[key]) {
+                        valCols.forEach(col => {
+                            logTemp[col].missingRows++;
+                            logTemp[col].details.push({
+                                time: key,
+                                field: col,
+                                action: '补齐缺失行',
+                                before: '时间轴缺失(整行不存在)',
+                                after: '已插入占位行',
+                                actionClass: 'action-newrow'
+                            });
+                        });
+                        aggregatedData[key] = { values: {}, rawTime: key, type: 'date', year: currentY, month: currentM };
+                        valCols.forEach(col => aggregatedData[key].values[col] = null);
+                    }
+                    currentM++;
+                    if (currentM > 12) { currentM = 1; currentY++; }
+                }
+            } else if (firstItem.type === 'prefixed' && firstItem.prefix === lastItem.prefix) {
+                // 按数字补齐 (如 T1 到 T20)
+                let startNum = firstItem.num;
+                let endNum = lastItem.num;
+                for (let n = startNum; n <= endNum; n++) {
+                    let key = `${firstItem.prefix}${n}`;
+                    finalTimeKeys.push(key);
+
+                    if (!aggregatedData[key]) {
+                        valCols.forEach(col => {
+                            logTemp[col].missingRows++;
+                            logTemp[col].details.push({
+                                time: key,
+                                field: col,
+                                action: '补齐缺失行',
+                                before: '时间轴缺失(整行不存在)',
+                                after: '已插入占位行',
+                                actionClass: 'action-newrow'
+                            });
+                        });
+                        aggregatedData[key] = { values: {}, rawTime: key, type: 'prefixed', prefix: firstItem.prefix, num: n };
+                        valCols.forEach(col => aggregatedData[key].values[col] = null);
+                    }
+                }
+            } else {
+                // 无法识别连续序列，仅使用现有数据
+                finalTimeKeys = uniqueTimeKeys;
+            }
+        } else {
+            finalTimeKeys = uniqueTimeKeys;
+        }
+
+        // 5. 生成最终的 cleaned 数组
+        let cleaned = [];
+        finalTimeKeys.forEach(timeKey => {
+            let row = {};
+            row[timeCol] = aggregatedData[timeKey].rawTime;
+            valCols.forEach(col => {
+                row[col] = aggregatedData[timeKey].values[col];
+            });
+            cleaned.push(row);
+        });
+
+        // 6. 执行缺失值插补、异常值处理、负值处理
+        valCols.forEach(col => {
+            // 缺失值处理
+            if (missingHandler !== 'none') {
+                for (let i = 0; i < cleaned.length; i++) {
+                    let val = cleaned[i][col];
+                    if (val === null || val === undefined || val === '' || isNaN(val)) {
+                        logTemp[col].missingFilled++;
+                        let newVal = 0;
+                        
+                        if (missingHandler === 'linear') {
+                            let prevVal = null, prevIdx = -1;
+                            for (let j = i - 1; j >= 0; j--) {
+                                if (cleaned[j][col] !== null && !isNaN(cleaned[j][col])) { prevVal = parseFloat(cleaned[j][col]); prevIdx = j; break; }
+                            }
+                            let nextVal = null, nextIdx = -1;
+                            for (let j = i + 1; j < cleaned.length; j++) {
+                                if (cleaned[j][col] !== null && !isNaN(cleaned[j][col])) { nextVal = parseFloat(cleaned[j][col]); nextIdx = j; break; }
+                            }
+                            if (prevVal !== null && nextVal !== null) newVal = prevVal + (nextVal - prevVal) * ((i - prevIdx) / (nextIdx - prevIdx));
+                            else if (prevVal !== null) newVal = prevVal;
+                            else if (nextVal !== null) newVal = nextVal;
+                        } 
+                        else if (missingHandler === 'neighbor_mean') {
+                            // 前后均值填充
+                            let prevVal = null;
+                            for (let j = i - 1; j >= 0; j--) {
+                                if (cleaned[j][col] !== null && !isNaN(cleaned[j][col])) { prevVal = parseFloat(cleaned[j][col]); break; }
+                            }
+                            let nextVal = null;
+                            for (let j = i + 1; j < cleaned.length; j++) {
+                                if (cleaned[j][col] !== null && !isNaN(cleaned[j][col])) { nextVal = parseFloat(cleaned[j][col]); break; }
+                            }
+                            if (prevVal !== null && nextVal !== null) newVal = (prevVal + nextVal) / 2;
+                            else if (prevVal !== null) newVal = prevVal;
+                            else if (nextVal !== null) newVal = nextVal;
+                            else newVal = 0;
+                        }
+                        else if (missingHandler === 'locf') {
+                            let prevVal = null;
+                            for (let j = i - 1; j >= 0; j--) {
+                                if (cleaned[j][col] !== null && !isNaN(cleaned[j][col])) { prevVal = parseFloat(cleaned[j][col]); break; }
+                            }
+                            if (prevVal !== null) newVal = prevVal;
+                            else {
+                                let nextVal = null;
+                                for (let j = i + 1; j < cleaned.length; j++) {
+                                    if (cleaned[j][col] !== null && !isNaN(cleaned[j][col])) { nextVal = parseFloat(cleaned[j][col]); break; }
+                                }
+                                newVal = nextVal !== null ? nextVal : 0;
+                            }
+                        } 
+                        else if (missingHandler === 'mean') {
+                            let sum = 0, count = 0;
+                            cleaned.forEach(r => {
+                                if (r[col] !== null && !isNaN(r[col])) { sum += parseFloat(r[col]); count++; }
+                            });
+                            newVal = count > 0 ? sum / count : 0;
+                        }
+                        else if (missingHandler === 'custom') {
+                            newVal = customMissingValue;
+                        }
+
+                        cleaned[i][col] = newVal;
+                        logTemp[col].details.push({
+                            time: cleaned[i][timeCol],
+                            field: col,
+                            action: '缺失值插补',
+                            before: 'null',
+                            after: newVal.toFixed(2),
+                            actionClass: 'action-missing'
+                        });
+                    }
+                }
+            } else {
+                for (let i = 0; i < cleaned.length; i++) {
+                    if (cleaned[i][col] === null || isNaN(cleaned[i][col])) cleaned[i][col] = 0; 
+                }
+            }
+
+            for (let i = 0; i < cleaned.length; i++) {
+                let v = parseFloat(cleaned[i][col]);
+                cleaned[i][col] = isNaN(v) ? 0 : v;
+            }
+
+            // 异常值处理
+            if (outlierHandler !== 'none') {
+                let validVals = cleaned.map(r => parseFloat(r[col])).filter(v => !isNaN(v) && v !== null);
+                if (validVals.length > 4) {
+                    validVals.sort((a, b) => a - b);
+                    if (outlierHandler === 'iqr') {
+                        const q1 = validVals[Math.floor(validVals.length * 0.25)];
+                        const q3 = validVals[Math.floor(validVals.length * 0.75)];
+                        const iqr = q3 - q1;
+                        const lowerBound = Math.max(0, q1 - 1.5 * iqr);
+                        const upperBound = q3 + 1.5 * iqr;
+                        for (let i = 0; i < cleaned.length; i++) {
+                            let v = cleaned[i][col];
+                            if (v > upperBound || v < lowerBound) {
+                                let newVal = v > upperBound ? upperBound : lowerBound;
+                                cleaned[i][col] = newVal;
+                                logTemp[col].outliersCapped++;
+                                logTemp[col].details.push({
+                                    time: cleaned[i][timeCol],
+                                    field: col,
+                                    action: '异常值修正 (IQR)',
+                                    before: v.toFixed(2),
+                                    after: newVal.toFixed(2),
+                                    actionClass: 'action-outlier'
+                                });
+                            }
+                        }
+                    } else if (outlierHandler === '3sigma') {
+                        const mean = validVals.reduce((a, b) => a + b, 0) / validVals.length;
+                        const variance = validVals.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / validVals.length;
+                        const std = Math.sqrt(variance);
+                        const lowerBound = Math.max(0, mean - 3 * std);
+                        const upperBound = mean + 3 * std;
+                        for (let i = 0; i < cleaned.length; i++) {
+                            let v = cleaned[i][col];
+                            if (v > upperBound || v < lowerBound) {
+                                let newVal = v > upperBound ? upperBound : lowerBound;
+                                cleaned[i][col] = newVal;
+                                logTemp[col].outliersCapped++;
+                                logTemp[col].details.push({
+                                    time: cleaned[i][timeCol],
+                                    field: col,
+                                    action: '异常值修正 (3σ)',
+                                    before: v.toFixed(2),
+                                    after: newVal.toFixed(2),
+                                    actionClass: 'action-outlier'
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 负值处理
+            if (negativeHandler !== 'keep') {
+                for (let i = 0; i < cleaned.length; i++) {
+                    let v = cleaned[i][col];
+                    if (v < 0) {
+                        let newVal = negativeHandler === 'zero' ? 0 : Math.abs(v);
+                        cleaned[i][col] = newVal;
+                        logTemp[col].negativesFixed++;
+                        logTemp[col].details.push({
+                            time: cleaned[i][timeCol],
+                            field: col,
+                            action: '负值处理',
+                            before: v.toFixed(2),
+                            after: newVal.toFixed(2),
+                            actionClass: 'action-negative'
+                        });
+                    }
+                }
+            }
+
+            currentCleaningLog.push({ colName: col, ...logTemp[col] });
+        });
+
+        return cleaned;
+    }
+
+    // 渲染清洗报告
+    function renderCleaningReport() {
+        const summaryContainer = document.getElementById('cleaning-report-container');
+        const detailContainer = document.getElementById('cleaning-detail-container');
+        const tbody = document.querySelector('#cleaning-detail-table tbody');
+        
+        summaryContainer.innerHTML = '';
+        tbody.innerHTML = '';
+        detailContainer.style.display = 'none';
+
+        const enableCleaning = document.getElementById('enable-cleaning').checked;
+        
+        if (!enableCleaning) {
+            summaryContainer.innerHTML = '<span class="subtitle" style="color:#f59e0b;">⚠️ 未启用数据清洗，直接使用原始数据进行预测。</span>';
+            return;
+        }
+
+        if (currentCleaningLog.length === 0) {
+            summaryContainer.innerHTML = '<span class="subtitle">无清洗记录。</span>';
+            return;
+        }
+
+        let allDetails = [];
+
+        currentCleaningLog.forEach(log => {
+            const cardHtml = `
+                <div class="diag-card" style="border-left-color: #f59e0b; min-width: 180px;">
+                    <div class="diag-header">
+                        <span class="diag-title">📦 ${log.colName}</span>
+                    </div>
+                    <div class="diag-detail" style="font-size: 0.75rem;">
+                        补齐缺失行: <span>${log.missingRows}</span> 行<br>
+                        重复时间行合并: <span>${log.duplicated}</span> 行<br>
+                        缺失值插补: <span>${log.missingFilled}</span> 个<br>
+                        异常值修正: <span>${log.outliersCapped}</span> 个<br>
+                        负值处理: <span>${log.negativesFixed}</span> 个
+                    </div>
+                </div>
+            `;
+            summaryContainer.innerHTML += cardHtml;
+
+            if (log.details && log.details.length > 0) {
+                allDetails = allDetails.concat(log.details);
+            }
+        });
+
+        if (allDetails.length > 0) {
+            detailContainer.style.display = 'block';
+            allDetails.forEach(d => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="color:#f8fafc;">${d.time}</td>
+                        <td style="color:#94a3b8;">${d.field}</td>
+                        <td><span class="action-tag ${d.actionClass}">${d.action}</span></td>
+                        <td style="color:#ef4444; text-decoration: line-through;">${d.before}</td>
+                        <td style="color:#10b981; font-weight:bold;">${d.after}</td>
+                    </tr>
+                `;
+            });
+        }
+    }
+
+    function calculateDemandClassification(data) {
+        const n = data.length;
+        const nzValues = data.filter(v => v > 0);
+        const nzCount = nzValues.length;
+        
+        if (nzCount === 0 || nzCount === n) {
+            const adi = nzCount === 0 ? Infinity : n / nzCount;
+            const mean = nzValues.reduce((a, b) => a + b, 0) / (nzCount || 1);
+            const variance = nzValues.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / (nzCount || 1);
+            const cv2 = mean === 0 ? 0 : variance / (mean * mean);
+            return { adi, cv2, category: nzCount === 0 ? 'zero' : 'smooth' };
+        }
+        
+        const adi = n / nzCount;
+        const mean = nzValues.reduce((a, b) => a + b, 0) / nzCount;
+        const variance = nzValues.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / nzCount;
+        const cv2 = variance / (mean * mean);
+        
+        let category = '';
+        const adiThreshold = 1.32;
+        const cv2Threshold = 0.49;
+        
+        if (adi < adiThreshold && cv2 < cv2Threshold) category = 'smooth';
+        else if (adi >= adiThreshold && cv2 < cv2Threshold) category = 'intermittent';
+        else if (adi < adiThreshold && cv2 >= cv2Threshold) category = 'erratic';
+        else category = 'lumpy';
+        
+        return { adi, cv2, category };
+    }
+
+    function forecastAlgorithm(modelKey, data, horizon, params) {
+        const n = data.length;
+        let fit = new Array(n).fill(null);
+        let future = new Array(horizon).fill(0);
+
+        if(modelKey === 'naive') {
+            for(let i=1; i<n; i++) fit[i] = data[i-1];
+            const lastVal = data[n-1];
+            future.fill(lastVal);
+        } 
+        else if(modelKey === 'sma') {
+            const w = Math.min(parseInt(params.window), Math.max(1, n-1));
+            for(let i=w; i<n; i++) {
+                let sum = 0;
+                for(let j=i-w; j<i; j++) sum += data[j];
+                fit[i] = sum / w;
+            }
+            let sumLast = 0;
+            for(let j=n-w; j<n; j++) sumLast += data[j];
+            const avg = sumLast / w;
+            future.fill(avg);
+        }
+        else if(modelKey === 'wma') {
+            const w = Math.min(parseInt(params.window), Math.max(1, n-1));
+            let weights = [];
+            let weightSum = 0;
+            for(let i=1; i<=w; i++) { weights.push(i); weightSum += i; }
+            for(let i=w; i<n; i++) {
+                let sum = 0;
+                for(let j=0; j<w; j++) sum += data[i-w+j] * weights[j];
+                fit[i] = sum / weightSum;
+            }
+            let sumLast = 0;
+            for(let j=0; j<w; j++) sumLast += data[n-w+j] * weights[j];
+            const fVal = sumLast / weightSum;
+            future.fill(fVal);
+        }
+        else if(modelKey === 'ses') {
+            const a = parseFloat(params.alpha);
+            fit[0] = data[0];
+            for(let i=1; i<n; i++) {
+                fit[i] = a * data[i-1] + (1 - a) * fit[i-1];
+            }
+            const lastF = a * data[n-1] + (1 - a) * fit[n-1];
+            future.fill(lastF);
+        }
+        else if(modelKey === 'des') {
+            const a = parseFloat(params.alpha);
+            const b = parseFloat(params.beta);
+            let l = data[0];
+            let t = (n > 1) ? data[1] - data[0] : 0;
+            fit[0] = l;
+            for(let i=1; i<n; i++) {
+                let prevL = l;
+                l = a * data[i] + (1 - a) * (l + t);
+                t = b * (l - prevL) + (1 - b) * t;
+                fit[i] = prevL + t;
+            }
+            for(let h=1; h<=horizon; h++) {
+                future[h-1] = l + h * t;
+            }
+        }
+        else if(modelKey === 'tes') {
+            const a = parseFloat(params.alpha);
+            const b = parseFloat(params.beta);
+            const g = parseFloat(params.gamma);
+            const m = Math.max(2, parseInt(params.period));
+            
+            let l = data[0];
+            let t = 0;
+            let s = new Array(m).fill(1.0);
+
+            for(let i=0; i<n; i++) {
+                let idx = i % m;
+                if(i < m) {
+                    fit[i] = data[i];
+                } else {
+                    let prevL = l;
+                    l = a * (data[i] - s[idx]) + (1 - a) * (l + t);
+                    t = b * (l - prevL) + (1 - b) * t;
+                    s[idx] = g * (data[i] - l) + (1 - g) * s[idx];
+                    fit[i] = prevL + t + s[idx];
+                }
+            }
+            for(let h=1; h<=horizon; h++) {
+                let idx = (n + h - 1) % m;
+                future[h-1] = l + h * t + s[idx];
+            }
+        }
+        else if(modelKey === 'arma' || modelKey === 'arima' || modelKey === 'sarima' || modelKey === 'sarimax') {
+            const p = parseInt(params.p) || 1;
+            const d = parseInt(params.d) || 0;
+            
+            let diffData = [...data];
+            if(d > 0) {
+                diffData = [];
+                for(let i=d; i<data.length; i++) diffData.push(data[i] - data[i-d]);
+            }
+
+            const mean = diffData.reduce((a,b)=>a+b, 0) / Math.max(1, diffData.length);
+            let phi = 0.6 / Math.max(1, p);
+            
+            for(let i=p; i<n; i++) {
+                let val = mean;
+                for(let j=1; j<=p; j++) {
+                    val += phi * (data[i-j] - mean);
+                }
+                fit[i] = val;
+            }
+
+            let lastVal = data[n-1];
+            for(let h=1; h<=horizon; h++) {
+                let f = mean + Math.pow(phi, h) * (lastVal - mean);
+                if(modelKey === 'sarima' || modelKey === 'sarimax') {
+                    const period = parseInt(params.period) || 12;
+                    let seasonalFactor = (n >= period) ? (data[n - period + ((h-1)%period)] - mean) * 0.3 : 0;
+                    f += seasonalFactor;
+                }
+                future[h-1] = f;
+            }
+        }
+        else if(modelKey.startsWith('croston_')) {
+            const a = parseFloat(params.alpha);
+            const b = parseFloat(params.beta) || a;
+            
+            let z = 0, p = 1;
+            let firstNonZero = false;
+            let qCounter = 0;
+
+            for(let i=0; i<n; i++) {
+                qCounter++;
+                if(data[i] !== 0) {
+                    if(!firstNonZero) {
+                        z = data[i];
+                        p = qCounter;
+                        firstNonZero = true;
+                    } else {
+                        z = a * data[i] + (1 - a) * z;
+                        if(modelKey === 'croston_tsb') {
+                            p = b * 1 + (1 - b) * p;
+                        } else {
+                            p = a * qCounter + (1 - a) * p;
+                        }
+                    }
+                    qCounter = 0;
+                } else {
+                    if(modelKey === 'croston_tsb') {
+                        p = (1 - b) * p;
+                    }
+                }
+
+                let rate = 0;
+                if(modelKey === 'croston_orig') rate = z / Math.max(1, p);
+                else if(modelKey === 'croston_sba') rate = (1 - a/2) * (z / Math.max(1, p));
+                else if(modelKey === 'croston_sbj') rate = (1 - a/(2-a)) * (z / Math.max(1, p));
+                else if(modelKey === 'croston_tsb') rate = z * p;
+
+                fit[i] = rate;
+            }
+
+            let lastRate = fit[n-1] || 0;
+            future.fill(lastRate);
+        }
+
+        return { fit, future };
+    }
+
+    function calculateValidationMetrics(actual, fit, trainSize) {
+        let n = 0;
+        let sumAbsError = 0;
+        let sumSqError = 0;
+        let sumAbsPctError = 0;
+        let sumSymmetricPctError = 0;
+        let sumActual = 0;
+
+        for(let i = trainSize; i < actual.length; i++) {
+            if(fit[i] !== null && fit[i] !== undefined) {
+                const y = actual[i];
+                const f = fit[i];
+                const err = y - f;
+                const absErr = Math.abs(err);
+
+                sumAbsError += absErr;
+                sumSqError += err * err;
+                sumActual += Math.abs(y);
+
+                if(y !== 0) {
+                    sumAbsPctError += Math.abs(err / y);
+                }
+                
+                const denom = (Math.abs(y) + Math.abs(f)) / 2;
+                if(denom !== 0) {
+                    sumSymmetricPctError += absErr / denom;
+                }
+                n++;
+            }
+        }
+
+        if(n === 0) return { mae: 0, rmse: 0, mape: 0, mse: 0, smape: 0, wmape: 0 };
+
+        const mae = sumAbsError / n;
+        const mse = sumSqError / n;
+        const rmse = Math.sqrt(mse);
+        const mape = (sumAbsPctError / n) * 100;
+        const smape = (sumSymmetricPctError / n) * 100;
+        const wmape = (sumActual !== 0) ? (sumAbsError / sumActual) * 100 : 0;
+
+        return { mae, rmse, mape, mse, smape, wmape };
+    }
+
+    function getModelParamStr(modelKey, params) {
+        if(modelKey === 'naive') return '格式: [无参数]';
+        if(modelKey === 'sma' || modelKey === 'wma') return `[窗口N=${params.window}]`;
+        if(modelKey === 'ses') return `[α=${params.alpha}]`;
+        if(modelKey === 'des') return `[α=${params.alpha}, β=${params.beta}]`;
+        if(modelKey === 'tes') return `[α=${params.alpha}, β=${params.beta}, γ=${params.gamma}, 周期s=${params.period}]`;
+        if(modelKey === 'arma') return `[p=${params.p}, q=${params.q}]`;
+        if(modelKey === 'arima') return `[p=${params.p}, d=${params.d}, q=${params.q}]`;
+        if(modelKey === 'sarima' || modelKey === 'sarimax') return `[(p=${params.p},d=${params.d},q=${params.q})×(P=${params.sp},D=${params.sd},Q=${params.sq})_周期${params.period}]`;
+        if(modelKey.startsWith('croston_')) {
+            if(modelKey === 'croston_tsb') return `[α=${params.alpha}, β=${params.beta}]`;
+            return `[α=${params.alpha}]`;
+        }
+        return '';
+    }
+
+    function generateParamGrid(modelKey, dataLen) {
+        let grid = [];
+        const periodInput = document.getElementById('auto-periods');
+        const periodStr = periodInput ? periodInput.value : "4,12";
+        let periods = periodStr.split(',')
+            .map(s => parseInt(s.trim()))
+            .filter(n => !isNaN(n) && n >= 2);
+        periods = periods.filter(p => p <= Math.floor(dataLen / 2));
+        if (periods.length === 0) periods = [Math.min(4, Math.floor(dataLen / 2))];
+
+        if (modelKey === 'naive') {
+            grid.push({});
+        } else if (modelKey === 'sma' || modelKey === 'wma') {
+            [2, 3, 4, 5, 6, 8, 12].forEach(w => grid.push({ window: w }));
+        } else if (modelKey === 'ses') {
+            [0.1, 0.3, 0.5, 0.7, 0.9].forEach(a => grid.push({ alpha: a }));
+        } else if (modelKey === 'des') {
+            [0.1, 0.3, 0.5, 0.7, 0.9].forEach(a => 
+                [0.1, 0.3, 0.5, 0.7, 0.9].forEach(b => grid.push({ alpha: a, beta: b }))
+            );
+        } else if (modelKey === 'tes') {
+            periods.forEach(p => 
+                [0.1, 0.5, 0.9].forEach(a => 
+                    [0.1, 0.5, 0.9].forEach(b => 
+                        [0.1, 0.5, 0.9].forEach(g => grid.push({ alpha: a, beta: b, gamma: g, period: p }))
+                    )
+                )
+            );
+        } else if (modelKey === 'arma') {
+            [0, 1, 2].forEach(p => [0, 1, 2].forEach(q => grid.push({ p, q })));
+        } else if (modelKey === 'arima') {
+            [0, 1, 2].forEach(p => [0, 1].forEach(d => [0, 1, 2].forEach(q => grid.push({ p, d, q }))));
+        } else if (modelKey === 'sarima' || modelKey === 'sarimax') {
+            periods.forEach(p => {
+                [0, 1].forEach(p_ar => [0, 1].forEach(d => [0, 1].forEach(q => 
+                    [0, 1].forEach(sp => [0, 1].forEach(sd => [0, 1].forEach(sq => 
+                        grid.push({ p: p_ar, d, q, sp, sd, sq, period: p })
+                    )))
+                )));
+            });
+        } else if (modelKey.startsWith('croston_')) {
+            [0.1, 0.3, 0.5, 0.7, 0.9].forEach(a => {
+                if (modelKey === 'croston_tsb') {
+                    [0.1, 0.3, 0.5, 0.7, 0.9].forEach(b => grid.push({ alpha: a, beta: b }));
+                } else {
+                    grid.push({ alpha: a });
+                }
+            });
+        }
+        return grid;
+    }
+
+    function runGridSearchForAllModels(multiValues, horizon, targetMetric, trainSize, isIntermittentDemand) {
+        let allModels = [
+            'naive', 'sma', 'wma', 'ses', 'des', 'tes', 
+            'arma', 'arima', 'sarima', 'croston_orig', 'croston_sba', 'croston_sbj', 'croston_tsb'
+        ];
+
+        if (!isIntermittentDemand) {
+            allModels = allModels.filter(m => !m.startsWith('croston_'));
+        }
+        
+        const gridResults = {};
+        
+        allModels.forEach(mKey => {
+            const paramGrid = generateParamGrid(mKey, multiValues[0].length); 
+            let bestMetric = Infinity;
+            let bestParams = null;
+            
+            paramGrid.forEach(params => {
+                let totalMetric = 0;
+                multiValues.forEach(vals => {
+                    const { fit } = forecastAlgorithm(mKey, vals, horizon, params);
+                    const m = calculateValidationMetrics(vals, fit, trainSize);
+                    totalMetric += m[targetMetric];
+                });
+                const avgMetric = totalMetric / multiValues.length;
+                
+                if (avgMetric < bestMetric) {
+                    bestMetric = avgMetric;
+                    bestParams = params;
+                }
+            });
+            
+            gridResults[mKey] = {
+                bestMetricVal: bestMetric,
+                bestParams: bestParams,
+                paramStr: getModelParamStr(mKey, bestParams)
+            };
+        });
+        
+        return gridResults;
+    }
+
+    function updateUIWithParams(params) {
+        if (params.window !== undefined) { document.getElementById('param-window').value = params.window; document.getElementById('v-window').innerText = params.window; }
+        if (params.alpha !== undefined) { document.getElementById('param-alpha').value = params.alpha; document.getElementById('v-alpha').innerText = params.alpha; }
+        if (params.beta !== undefined) { document.getElementById('param-beta').value = params.beta; document.getElementById('v-beta').innerText = params.beta; }
+        if (params.gamma !== undefined) { document.getElementById('param-gamma').value = params.gamma; document.getElementById('v-gamma').innerText = params.gamma; }
+        if (params.period !== undefined) { document.getElementById('param-period').value = params.period; }
+        if (params.p !== undefined) { document.getElementById('param-p').value = params.p; }
+        if (params.d !== undefined) { document.getElementById('param-d').value = params.d; }
+        if (params.q !== undefined) { document.getElementById('param-q').value = params.q; }
+        if (params.sp !== undefined) { document.getElementById('param-sp').value = params.sp; }
+        if (params.sd !== undefined) { document.getElementById('param-sd').value = params.sd; }
+        if (params.sq !== undefined) { document.getElementById('param-sq').value = params.sq; }
+    }
+
+    function applyBestModelByMetric() {
+        const selectedCols = Array.from(document.getElementById('val-col').selectedOptions).map(o => o.value);
+        if(selectedCols.length === 0) {
+            alert("请先选择需要预测的数值列！");
+            return;
+        }
+
+        const btn = document.getElementById('auto-tune-btn');
+        const originalText = btn.innerText;
+        btn.innerText = "⏳ 正在搜索最优参数...";
+        btn.disabled = true;
+
+        setTimeout(() => {
+            try {
+                const multiValues = selectedCols.map(col => cleanedData.map(r => parseFloat(r[col]) || 0));
+                const targetMetric = document.getElementById('best-metric-select').value;
+                const horizon = parseInt(document.getElementById('forecast-horizon').value);
+                const splitPct = parseInt(document.getElementById('train-split').value) / 100;
+                const trainSize = Math.floor(multiValues[0].length * splitPct);
+
+                let isIntermittentDemand = true;
+                selectedCols.forEach(col => {
+                    const vals = cleanedData.map(r => parseFloat(r[col]) || 0);
+                    const diag = calculateDemandClassification(vals);
+                    if (diag.category !== 'intermittent' && diag.category !== 'lumpy') {
+                        isIntermittentDemand = false;
+                    }
+                });
+
+                const searchResults = runGridSearchForAllModels(multiValues, horizon, targetMetric, trainSize, isIntermittentDemand);
+
+                let bestModelKey = 'naive';
+                let minVal = Infinity;
+                let bestParams = {};
+
+                Object.keys(searchResults).forEach(mKey => {
+                    const val = searchResults[mKey].bestMetricVal;
+                    if (!isNaN(val) && val < minVal) {
+                        minVal = val;
+                        bestModelKey = mKey;
+                        bestParams = searchResults[mKey].bestParams;
+                    }
+                });
+
+                document.getElementById('model-select').value = bestModelKey;
+                updateUIWithParams(bestParams);
+                toggleParamPanels();
+                runAnalysis();
+                
+                btn.innerText = originalText;
+                btn.disabled = false;
+                
+                const modelLabel = getModelLabel(bestModelKey);
+                alert(`自动调优完成！\n最佳模型: ${modelLabel}\n最佳参数: ${getModelParamStr(bestModelKey, bestParams)}\n验证集 ${targetMetric.toUpperCase()}: ${minVal.toFixed(4)}`);
+
+            } catch (e) {
+                console.error(e);
+                alert("寻优过程出错: " + e.message);
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }, 50);
+    }
+
+    function getModelLabel(key) {
+        const labels = {
+            'naive': '朴素预测 (Naive)', 'sma': '简单移动平均 (SMA)', 'wma': '加权移动平均 (WMA)',
+            'ses': '单指数平滑 (SES)', 'des': '双指数平滑 (Holt)', 'tes': '三指数平滑 (Holt-Winters)',
+            'arma': 'ARMA', 'arima': 'ARIMA', 'sarima': 'SARIMA', 'sarimax': 'SARIMAX',
+            'croston_orig': '原始 Croston', 'croston_sba': 'Croston SBA',
+            'croston_sbj': 'Croston SBJ', 'croston_tsb': 'Croston TSB'
+        };
+        return labels[key] || key;
+    }
+
+    function getCurrentParams() {
+        return {
+            window: document.getElementById('param-window').value,
+            alpha: document.getElementById('param-alpha').value,
+            beta: document.getElementById('param-beta').value,
+            gamma: document.getElementById('param-gamma').value,
+            period: document.getElementById('param-period').value,
+            p: document.getElementById('param-p').value,
+            d: document.getElementById('param-d').value,
+            q: document.getElementById('param-q').value,
+            sp: document.getElementById('param-sp').value,
+            sd: document.getElementById('param-sd').value,
+            sq: document.getElementById('param-sq').value
+        };
+    }
+
+    function runAnalysis() {
+        if(rawData.length === 0) return;
+
+        const timeCol = document.getElementById('time-col').value;
+        const selectedValCols = Array.from(document.getElementById('val-col').selectedOptions).map(o => o.value);
+
+        if(selectedValCols.length === 0) return;
+
+        const enableCleaning = document.getElementById('enable-cleaning').checked;
+        
+        if (enableCleaning) {
+            cleanedData = cleanData(rawData, timeCol, selectedValCols);
+        } else {
+            cleanedData = JSON.parse(JSON.stringify(rawData));
+            currentCleaningLog = []; 
+        }
+        
+        renderCleaningReport();
+
+        parsedTimes = cleanedData.map(r => r[timeCol]);
+        const multiValues = selectedValCols.map(col => cleanedData.map(r => parseFloat(r[col]) || 0));
+
+        const currentModel = document.getElementById('model-select').value;
+        const horizon = parseInt(document.getElementById('forecast-horizon').value);
+        const ciLevel = parseFloat(document.getElementById('ci-level').value);
+        const zVal = getZValue(ciLevel);
+
+        const splitPct = parseInt(document.getElementById('train-split').value) / 100;
+        const trainSize = Math.floor(parsedTimes.length * splitPct);
+        const valSize = parsedTimes.length - trainSize;
+
+        document.getElementById('train-count-tip').innerText = `${Math.round(splitPct*100)}% (${trainSize}期)`;
+        document.getElementById('val-count-tip').innerText = `${100 - Math.round(splitPct*100)}% (${valSize}期)`;
+
+        const params = getCurrentParams();
+
+        const paramStr = getModelParamStr(currentModel, params);
+        const modelLabel = getModelLabel(currentModel);
+        document.getElementById('banner-model-text').innerHTML = `${modelLabel} <span class="banner-param">${paramStr || '默认配置'}</span>`;
+        document.getElementById('banner-target-metric').innerText = document.getElementById('best-metric-select').value.toUpperCase();
+
+        globalMultiResults = [];
+
+        multiValues.forEach((vals, idx) => {
+            const { fit, future } = forecastAlgorithm(currentModel, vals, horizon, params);
+            const metrics = calculateValidationMetrics(vals, fit, trainSize);
+
+            const stdDev = metrics.rmse || 1.0;
+            let lowerBoundsFuture = [], upperBoundsFuture = [];
+            for(let h=0; h<future.length; h++) {
+                const stepStd = stdDev * Math.sqrt(h + 1);
+                lowerBoundsFuture.push(future[h] - zVal * stepStd);
+                upperBoundsFuture.push(future[h] + zVal * stepStd);
+            }
+
+            globalMultiResults.push({
+                colName: selectedValCols[idx],
+                actual: vals,
+                fit,
+                future,
+                lowerFuture: lowerBoundsFuture,
+                upperFuture: upperBoundsFuture,
+                metrics
+            });
+        });
+
+        renderDiagnosticCards(selectedValCols);
+        updateBestBadges(multiValues, horizon, params, trainSize);
+        renderProductTabs(selectedValCols);
+        switchTab(activeProductIndex);
+    }
+
+    function renderDiagnosticCards(selectedCols) {
+        const container = document.getElementById('diagnostic-container');
+        container.innerHTML = '';
+
+        selectedCols.forEach(col => {
+            const vals = cleanedData.map(r => parseFloat(r[col]) || 0);
+            const diag = calculateDemandClassification(vals);
+            
+            let catName = '';
+            let catClass = '';
+            if (diag.category === 'smooth') { catName = '平滑需求'; catClass = 'cat-smooth'; }
+            else if (diag.category === 'erratic') { catName = '波动需求'; catClass = 'cat-erratic'; }
+            else if (diag.category === 'intermittent') { catName = '间歇需求'; catClass = 'cat-intermittent'; }
+            else if (diag.category === 'lumpy') { catName = '块状需求'; catClass = 'cat-lumpy'; }
+            else { catName = '全零/未知'; catClass = 'cat-erratic'; }
+
+            const isIntermittent = diag.category === 'intermittent' || diag.category === 'lumpy';
+            const crostonHint = isIntermittent ? '<span style="color:#10b981">✔ 适合 Croston</span>' : '<span style="color:#ef4444">✘ 不适合 Croston</span>';
+
+            const cardHtml = `
+                <div class="diag-card">
+                    <div class="diag-header">
+                        <span class="diag-title">📦 ${col}</span>
+                        <span class="diag-category ${catClass}">${catName}</span>
+                    </div>
+                    <div class="diag-detail">
+                        ADI (平均需求间隔): <span>${diag.adi === Infinity ? '∞' : diag.adi.toFixed(2)}</span> (阈值 1.32)<br>
+                        CV² (变异系数平方): <span>${diag.cv2 === Infinity ? '∞' : diag.cv2.toFixed(2)}</span> (阈值 0.49)<br>
+                        <div style="margin-top: 8px; font-size: 0.8rem;">${crostonHint}</div>
+                    </div>
+                </div>
+            `;
+            container.innerHTML += cardHtml;
+        });
+    }
+
+    function updateBestBadges(multiValues, horizon, params, trainSize) {
+        const allModels = [
+            'naive', 'sma', 'wma', 'ses', 'des', 'tes', 
+            'arma', 'arima', 'sarima', 'croston_orig', 'croston_sba', 'croston_sbj', 'croston_tsb'
+        ];
+        let modelMetrics = {};
+        
+        allModels.forEach(mKey => {
+            let totalM = { mae: 0, rmse: 0, mape: 0, mse: 0, smape: 0, wmape: 0 };
+            let count = multiValues.length;
+            
+            multiValues.forEach(vals => {
+                const { fit } = forecastAlgorithm(mKey, vals, horizon, params);
+                const m = calculateValidationMetrics(vals, fit, trainSize);
+                totalM.mae += m.mae; totalM.rmse += m.rmse; totalM.mape += m.mape;
+                totalM.mse += m.mse; totalM.smape += m.smape; totalM.wmape += m.wmape;
+            });
+            
+            modelMetrics[mKey] = {
+                mae: totalM.mae/count, rmse: totalM.rmse/count, mape: totalM.mape/count,
+                mse: totalM.mse/count, smape: totalM.smape/count, wmape: totalM.wmape/count,
+                paramStr: getModelParamStr(mKey, params)
+            };
+        });
+
+        const metricsList = ['mae', 'rmse', 'mape', 'mse', 'smape', 'wmape'];
+        metricsList.forEach(m => {
+            let sorted = Object.keys(modelMetrics).map(k => ({
+                model: k, val: modelMetrics[k][m], paramStr: modelMetrics[k].paramStr
+            })).sort((a,b) => a.val - b.val);
+            
+            let top1 = sorted[0];
+            document.getElementById(`best-${m}`).innerText = `最佳: ${getModelLabel(top1.model)} ${top1.paramStr}`;
+        });
+    }
+
+    function renderProductTabs(selectedCols) {
+        const container = document.getElementById('product-tabs');
+        container.innerHTML = '';
+
+        const allBtn = document.createElement('button');
+        allBtn.className = `tab-btn ${activeProductIndex === 'all' ? 'active' : ''}`;
+        allBtn.innerText = '📊 多产品全景对比';
+        allBtn.onclick = () => switchTab('all');
+        container.appendChild(allBtn);
+
+        selectedCols.forEach((col, idx) => {
+            const btn = document.createElement('button');
+            btn.className = `tab-btn ${activeProductIndex === idx ? 'active' : ''}`;
+            btn.innerText = `📦 ${col}`;
+            btn.onclick = () => switchTab(idx);
+            container.appendChild(btn);
+        });
+    }
+
+    function switchTab(tabIdx) {
+        activeProductIndex = tabIdx;
+        
+        const tabs = document.querySelectorAll('.tab-btn');
+        tabs.forEach((t, i) => {
+            if((tabIdx === 'all' && i === 0) || (i === tabIdx + 1)) {
+                t.classList.add('active');
+            } else {
+                t.classList.remove('active');
+            }
+        });
+
+        const trainSize = Math.floor(parsedTimes.length * (parseInt(document.getElementById('train-split').value) / 100));
+
+        updateMetricsCards(tabIdx);
+        renderMultiChart(parsedTimes, globalMultiResults, trainSize, tabIdx);
+        renderMultiTable(parsedTimes, globalMultiResults, trainSize, tabIdx);
+    }
+
+    function updateMetricsCards(tabIdx) {
+        let m = { mae: 0, rmse: 0, mape: 0, mse: 0, smape: 0, wmape: 0 };
+
+        if(tabIdx === 'all') {
+            const count = globalMultiResults.length;
+            globalMultiResults.forEach(r => {
+                m.mae += r.metrics.mae; m.rmse += r.metrics.rmse; m.mape += r.metrics.mape;
+                m.mse += r.metrics.mse; m.smape += r.metrics.smape; m.wmape += r.metrics.wmape;
+            });
+            m.mae /= count; m.rmse /= count; m.mape /= count;
+            m.mse /= count; m.smape /= count; m.wmape /= count;
+        } else {
+            m = globalMultiResults[tabIdx].metrics;
+        }
+
+        document.getElementById('m-mae').innerText = m.mae.toFixed(2);
+        document.getElementById('m-rmse').innerText = m.rmse.toFixed(2);
+        document.getElementById('m-mape').innerText = m.mape.toFixed(2) + '%';
+        document.getElementById('m-mse').innerText = m.mse.toFixed(2);
+        document.getElementById('m-smape').innerText = m.smape.toFixed(2) + '%';
+        document.getElementById('m-wmape').innerText = m.wmape.toFixed(2) + '%';
+    }
+
+    function renderMultiChart(times, multiResults, trainSize, tabIdx) {
+        const chartsContainer = document.getElementById('charts-container');
+        chartsContainer.innerHTML = ''; 
+
+        if (forecastCharts.length > 0) {
+            forecastCharts.forEach(chart => chart.destroy());
+            forecastCharts = [];
+        }
+
+        const n = times.length;
+        const horizon = multiResults[0].future.length;
+
+        let extendedTimes = [...times];
+        for(let h=1; h<=horizon; h++) {
+            extendedTimes.push(`预测 T+${h}`);
+        }
+
+        const colorPalette = [
+            { actual: '#f59e0b', fit: '#3b82f6', forecast: '#10b981', band: 'rgba(16, 185, 129, 0.15)' },
+            { actual: '#ec4899', fit: '#8b5cf6', forecast: '#06b6d4', band: 'rgba(6, 182, 212, 0.15)' },
+            { actual: '#f97316', fit: '#6366f1', forecast: '#84cc16', band: 'rgba(132, 204, 22, 0.15)' }
+        ];
+
+        const targets = (tabIdx === 'all') ? multiResults : [multiResults[tabIdx]];
+
+        targets.forEach((res, i) => {
+            const realIdx = (tabIdx === 'all') ? i : tabIdx;
+            const colors = colorPalette[realIdx % colorPalette.length];
+            const pName = res.colName;
+
+            const chartBox = document.createElement('div');
+            chartBox.className = 'chart-container';
+            /* 【数字水印绑定】图表容器附带作者指纹，便于溯源 */
+            chartBox.setAttribute('data-author', '林梦龙');
+            chartBox.setAttribute('data-fp', _0xLM_FP);
+            chartBox.setAttribute('data-sig', _0xLM_SIG_2024);
+            
+            if (tabIdx === 'all') {
+                const titleEl = document.createElement('h4');
+                titleEl.className = 'chart-title';
+                titleEl.innerText = `📦 ${pName} - 需求预测`;
+                chartBox.appendChild(titleEl);
+            }
+
+            const canvasEl = document.createElement('canvas');
+            canvasEl.id = `forecastChart_${tabIdx}_${i}`;
+            /* 画布层亦绑定作者签名（即使被复制到别处仍可溯源） */
+            canvasEl.setAttribute('data-lm', _0xLM_FP + '-' + realIdx);
+            chartBox.appendChild(canvasEl);
+            chartsContainer.appendChild(chartBox);
+
+            let datasets = [];
+            let actualData = [...res.actual, ...new Array(horizon).fill(null)];
+            let fitData = [...res.fit, ...new Array(horizon).fill(null)];
+            let futureData = new Array(n - 1).fill(null);
+            futureData.push(res.fit[n-1] !== null ? res.fit[n-1] : res.actual[n-1]);
+            futureData.push(...res.future);
+
+            datasets.push({
+                label: `${pName} - 实际历史数据`,
+                data: actualData, borderColor: colors.actual, backgroundColor: colors.actual, borderWidth: 2, pointRadius: 3
+            });
+            datasets.push({
+                label: `${pName} - 模型历史拟合`,
+                data: fitData, borderColor: colors.fit, borderWidth: 2, borderDash: [4, 4], pointRadius: 0
+            });
+            datasets.push({
+                label: `${pName} - 未来独立预测`,
+                data: futureData, borderColor: colors.forecast, backgroundColor: colors.forecast, borderWidth: 3, pointRadius: 5
+            });
+
+            let upperData = new Array(n).fill(null).concat(res.upperFuture);
+            let lowerData = new Array(n).fill(null).concat(res.lowerFuture);
+
+            datasets.push({
+                label: `${pName} - 置信区间上限`, data: upperData, borderColor: 'transparent', pointRadius: 0, fill: false
+            });
+            datasets.push({
+                label: `${pName} - 置信区间下限`, data: lowerData, borderColor: 'transparent', backgroundColor: colors.band, pointRadius: 0, fill: '-1'
+            });
+
+            const ctx = canvasEl.getContext('2d');
+            const chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { labels: extendedTimes, datasets: datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+                    },
+                    plugins: { legend: { display: true, position: 'top', labels: { color: '#f8fafc', usePointStyle: true } } }
+                },
+                /* 【核心：渲染层水印插件 — 请勿删除】
+                 * 该插件会在每张图表的右下角绘制 "水印: 林梦龙"，
+                 * 并在图表中心叠加斜向淡显署名。即使前端被二次修改，
+                 * 只要此插件未被移除，图表始终带有作者数字签名。 */
+                plugins: [_0xLM_RenderUnit]
+            });
+            
+            forecastCharts.push(chartInstance);
+        });
+    }
+
+    function renderMultiTable(times, multiResults, trainSize, tabIdx) {
+        const container = document.getElementById('tables-container');
+        container.innerHTML = '';
+
+        const targets = (tabIdx === 'all') ? multiResults : [multiResults[tabIdx]];
+        document.getElementById('table-title').innerText = (tabIdx === 'all') ? '多产品综合需求预测明细表' : `产品 [${multiResults[tabIdx].colName}] 独立预测明细表`;
+
+        targets.forEach((res) => {
+            const pName = res.colName;
+
+            if (tabIdx === 'all') {
+                const titleEl = document.createElement('h4');
+                titleEl.className = 'table-title-sub';
+                titleEl.innerText = `📦 ${pName} 明细数据`;
+                container.appendChild(titleEl);
+            }
+
+            const tableWrapper = document.createElement('div');
+            tableWrapper.className = 'table-container';
+            /* 数据表容器绑定作者元信息（DOM 层隐性水印） */
+            tableWrapper.setAttribute('data-author', '林梦龙');
+            tableWrapper.setAttribute('data-copyright', 'Copyright © 2024 林梦龙');
+
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>时间 (Time)</th><th>阶段类别</th><th>需求列/产品</th>
+                        <th>实际值 (Actual)</th><th>拟合/预测值 (Forecast)</th>
+                        <th>残差 (Error)</th><th>置信下限</th><th>置信上限</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            `;
+
+            const tbody = table.querySelector('tbody');
+
+            for(let i=0; i<times.length; i++) {
+                const time = times[i];
+                const act = res.actual[i];
+                const f = res.fit[i] !== null ? res.fit[i].toFixed(2) : '-';
+                const err = res.fit[i] !== null ? (act - res.fit[i]).toFixed(2) : '-';
+                const isTrain = i < trainSize;
+                const typeLabel = isTrain ? '<span style="color:#f59e0b">训练集</span>' : '<span style="color:#ec4899">验证集</span>';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${time}</td><td>${typeLabel}</td><td style="font-weight:bold;">${pName}</td>
+                        <td>${act}</td><td style="color:#60a5fa">${f}</td><td>${err}</td><td>-</td><td>-</td>
+                    </tr>
+                `;
+            }
+
+            for(let h=0; h<res.future.length; h++) {
+                const time = `预测 T+${h+1}`;
+                const f = res.future[h].toFixed(2);
+                const low = res.lowerFuture[h].toFixed(2);
+                const up = res.upperFuture[h].toFixed(2);
+
+                tbody.innerHTML += `
+                    <tr style="background: rgba(16, 185, 129, 0.05);">
+                        <td style="color:#10b981; font-weight:bold;">${time}</td><td style="color:#10b981">未来预测</td>
+                        <td style="font-weight:bold; color:#10b981;">${pName}</td>
+                        <td>-</td><td style="color:#10b981; font-weight:bold;">${f}</td>
+                        <td>-</td><td style="color:#10b981">${low}</td><td style="color:#10b981">${up}</td>
+                    </tr>
+                `;
+            }
+
+            tableWrapper.appendChild(table);
+            container.appendChild(tableWrapper);
+        });
+    }
+
+    function exportCSV() {
+        const tables = document.querySelectorAll('#tables-container table');
+        if (tables.length === 0) return;
+
+        let csv = [];
+        /* 【导出层水印】导出文件中嵌入作者版权签名 */
+        csv.push(`"# 本文件由 林梦龙 时间序列预测平台生成 | Copyright © 2024 林梦龙 版权所有 | 侵权必究"`);
+        csv.push(`"# 生成时间: ${new Date().toLocaleString()}"`);
+        csv.push(`"# 作者指纹: ${_0xLM_FP} | 数字水印: 林梦龙"`);
+        csv.push("");
+
+        tables.forEach(table => {
+            const prevEl = table.parentElement.previousElementSibling;
+            if (prevEl && prevEl.tagName === 'H4') {
+                csv.push(`"${prevEl.innerText}"`);
+            }
+            for (let i = 0; i < table.rows.length; i++) {
+                let row = [], cols = table.rows[i].cells;
+                for (let j = 0; j < cols.length; j++) {
+                    let text = cols[j].innerText.replace(/"/g, '""');
+                    row.push(`"${text}"`);
+                }
+                csv.push(row.join(","));
+            }
+            csv.push(""); 
+        });
+
+        /* 文件末尾再次追加作者指纹 */
+        csv.push(`"# ===== 本文件所有数据、模型、图表均由 林梦龙 时间序列预测平台生成 ====="`);
+        csv.push(`"# ===== Copyright © 2024 林梦龙. All Rights Reserved. 侵权必究 ====="`);
+
+        const csvContent = '\ufeff' + csv.join("\n");
+        const csvFile = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+
+        const downloadLink = document.createElement("a");
+        let activeTab = document.querySelector('.tab-btn.active');
+        let tabName = activeTab ? activeTab.innerText.trim().replace(/[📦📊\s]/g, '') : 'ALL';
+
+        downloadLink.download = `forecast_林梦龙_${tabName}.csv`;
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.style.display = "none";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    }
+
+    /* =====================================================================
+     *  全局防篡改监测（可选增强）
+     *  说明：如检测到页面被嵌入第三方 iframe 或作者信息被移除，
+     *       会在控制台输出警告。不影响主体功能。
+     * ===================================================================== */
+    (function _0xLM_Guard() {
+        try {
+            if (window.self !== window.top) {
+                console.warn('%c[版权警告] 本平台版权所有 © 林梦龙，检测到当前页面被嵌入第三方框架。请确认使用环境合法性。',
+                    'color:#f59e0b;font-weight:bold;font-size:13px;');
+            }
+            console.log('%c时间序列预测平台 · 版权所有 © 2024 林梦龙',
+                'color:#60a5fa;font-weight:bold;font-size:14px;');
+            console.log('%c指纹签名: ' + _0xLM_FP + ' | 侵权必究',
+                'color:#94a3b8;font-size:12px;');
+        } catch (e) {}
+    })();
+</script>
+</body>
+</html>
